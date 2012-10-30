@@ -41,9 +41,10 @@ public class DeviceDetailFragment extends Fragment {
         return rootView;
     }
     
-    View.OnClickListener myHandler = new View.OnClickListener() {
+    View.OnClickListener myHandler = new OnClickListener();
+    
+    class OnClickListener implements View.OnClickListener {
 		
-		@Override
 		public void onClick(View v) {
 			System.out.println(myAgent.doInBackground((String[])null));			
 		}
