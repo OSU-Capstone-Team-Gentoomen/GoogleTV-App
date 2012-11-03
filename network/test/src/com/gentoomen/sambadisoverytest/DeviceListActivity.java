@@ -23,9 +23,8 @@ public class DeviceListActivity extends FragmentActivity
                     .setActivateOnItemClick(true);
         }
     }
-
-    @Override
-    public void onItemSelected(String id) {
+    
+    public void onItemSelected(String id) {    	
         if (mTwoPane) {
             Bundle arguments = new Bundle();
             arguments.putString(DeviceDetailFragment.ARG_ITEM_ID, id);

@@ -1,19 +1,16 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    style="?android:attr/textAppearanceLarge"
     android:id="@+id/device_detail"
+    style="?android:attr/textAppearanceLarge"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
-
-    <Button
-        android:id="@+id/button1"
-        android:layout_width="wrap_content"
+    android:padding="16dp" >
+    
+    <ListView
+        android:id="@+id/buttonListContainer"
+        android:layout_width="0dip"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginRight="551dp"
-        android:layout_marginTop="228dp"
-        android:text="Button"/>
+        android:layout_weight="1" >
+    </ListView>
 
-</RelativeLayout>
+</LinearLayout>

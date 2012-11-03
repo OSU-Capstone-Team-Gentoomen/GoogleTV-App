@@ -1,6 +1,6 @@
 package com.gentoomen.sambadisoverytest;
 
-import com.gentoomen.sambadisoverytest.dummy.DummyContent;
+import com.gentoomen.sambadisoverytest.dummy.NetworkFunctions;
 
 import android.R;
 import android.app.Activity;
@@ -23,8 +23,12 @@ public class DeviceListFragment extends ListFragment {
     }
 
     private static Callbacks sDummyCallbacks = new Callbacks() {
-        @Override
+        
         public void onItemSelected(String id) {
+        	System.out.println(id);
+        	if(Integer.parseInt(id) == 1){
+        		
+        	}
         }
     };
 
@@ -34,10 +38,10 @@ public class DeviceListFragment extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setListAdapter(new ArrayAdapter<DummyContent.DummyItem>(getActivity(),
+        setListAdapter(new ArrayAdapter<NetworkFunctions.NetworkFunctionItem>(getActivity(),
                 R.layout.simple_list_item_activated_1,
                 R.id.text1,
-                DummyContent.ITEMS));
+                NetworkFunctions.ITEMS));
     }
 
     @Override
@@ -66,9 +70,9 @@ public class DeviceListFragment extends ListFragment {
     }
 
     @Override
-    public void onListItemClick(ListView listView, View view, int position, long id) {
+    public void onListItemClick(ListView listView, View view, int position, long id) {    	
         super.onListItemClick(listView, view, position, id);
-        mCallbacks.onItemSelected(DummyContent.ITEMS.get(position).id);
+        mCallbacks.onItemSelected(NetworkFunctions.ITEMS.get(position).id);
     }
 
     @Override

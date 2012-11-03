@@ -29,6 +29,7 @@ public class DeviceDetailActivity extends FragmentActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+    	//System.out.println(item.getItemId());
         if (item.getItemId() == android.R.id.home) {
             NavUtils.navigateUpTo(this, new Intent(this, DeviceListActivity.class));
             return true;
