@@ -1,6 +1,6 @@
-package com.gentoomen.sambadisoverytest;
+package com.gentoomen.entities;
 
-import com.gentoomen.sambadisoverytest.dummy.NetworkFunctions;
+import com.gentoomen.sambadisoverytest.R;
 import com.gentoomen.sambadiscoverytest.discoveryagent.*;
 
 import android.content.Context;
@@ -58,10 +58,12 @@ public class DeviceDetailFragment extends Fragment {
 					switch(mTabPosition){
 					
 					case 0:
-						showToastMessage(myAgent.doInBackground(new String[]{String.valueOf(arg2)}));
+						showToastMessage(myAgent.doInBackground(new String[]{String.valueOf(mTabPosition), String.valueOf(arg2)}));
 						break;
 					case 1:
-						showToastMessage("Pinging/Scanning Not Implemented");
+						//showToastMessage("Pinging/Scanning Not Implemented");
+						showToastMessage(myAgent.doInBackground(new String[]{String.valueOf(mTabPosition), String.valueOf(arg2)}));
+						
 						break;
 					case 2:
 						showToastMessage("Browsing/Authentication Not Implemented");
@@ -90,9 +92,5 @@ public class DeviceDetailFragment extends Fragment {
     
     private void showToastMessage(String message){    	
     	Toast.makeText((Context)getActivity(), message, Toast.LENGTH_SHORT).show();
-    }
-            
-
-    
-    
+    }   
 }

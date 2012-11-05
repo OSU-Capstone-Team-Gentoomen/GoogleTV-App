@@ -1,4 +1,6 @@
-package com.gentoomen.sambadisoverytest;
+package com.gentoomen.entities;
+
+import com.gentoomen.sambadisoverytest.R;
 
 import android.content.Intent;
 import android.os.Bundle;

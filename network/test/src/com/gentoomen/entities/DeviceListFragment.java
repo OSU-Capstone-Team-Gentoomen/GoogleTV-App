@@ -1,6 +1,5 @@
-package com.gentoomen.sambadisoverytest;
+package com.gentoomen.entities;
 
-import com.gentoomen.sambadisoverytest.dummy.NetworkFunctions;
 
 import android.R;
 import android.app.Activity;
