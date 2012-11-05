@@ -9,7 +9,7 @@
     android:showDividers="middle"
     tools:context=".DeviceListActivity">
 
-    <fragment android:name="com.gentoomen.sambadisoverytest.DeviceListFragment"
+    <fragment android:name="com.gentoomen.entities.DeviceListFragment"
         android:id="@+id/device_list"
         android:layout_width="0dp"
         android:layout_height="match_parent"

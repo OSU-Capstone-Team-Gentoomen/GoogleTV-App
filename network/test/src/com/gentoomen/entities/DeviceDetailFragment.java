@@ -1,7 +1,7 @@
 package com.gentoomen.entities;
 
-import com.gentoomen.sambadisoverytest.R;
 import com.gentoomen.sambadiscoverytest.discoveryagent.*;
+import com.gentoomen.entities.R;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -13,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
+
 
 public class DeviceDetailFragment extends Fragment {
 

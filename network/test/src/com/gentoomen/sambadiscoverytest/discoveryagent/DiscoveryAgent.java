@@ -2,15 +2,12 @@ package com.gentoomen.sambadiscoverytest.discoveryagent;
 
 import java.io.IOException;
 
-import jcifs.UniAddress;
-import jcifs.smb.*;
 import android.content.Context;
 import android.net.*;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.StrictMode;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 
@@ -155,7 +152,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		hosts = new LinkedList<Pingable>();
 		InetAddress curAddr;
 		
-		for(int i = lowest; i < highest; i++) {
+		for(int i = lowest + 1; i < highest - 1; i++) {
 			try {
 				curAddr = InetAddress.getByName(intToIp(i));
 			} catch(UnknownHostException e) { continue; }
@@ -167,8 +164,12 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	}
 	
 	private String hostIter() {
-		String ans = "";
 		
+		if(hosts.size() == 0){
+			return "Error scanning"; 												
+		}
+		
+		String ans = "";
 		for(Pingable p : hosts) {
 			ans += p.addr.getHostAddress() + ", ";
 		}

@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.gentoomen.sambadisoverytest"
+    package="com.gentoomen.entities"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -28,7 +28,7 @@
             android:label="@string/title_device_detail" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".DeviceListActivity" />
+                android:value=".DeviceDetailActivity" />
         </activity>
     </application>
 
