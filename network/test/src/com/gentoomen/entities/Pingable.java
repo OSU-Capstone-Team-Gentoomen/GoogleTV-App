@@ -6,6 +6,7 @@ public class Pingable {
 	public InetAddress addr;
 	public boolean isOnline;
 	public boolean pinged;
+	public boolean hasAuthentication;	
 	
 	public Pingable(InetAddress a) {
 		addr = a;

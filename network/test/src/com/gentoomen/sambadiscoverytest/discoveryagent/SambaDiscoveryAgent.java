@@ -1,5 +1,6 @@
 package com.gentoomen.sambadiscoverytest.discoveryagent;
 
+import jcifs.Config;
 import jcifs.UniAddress;
 import jcifs.smb.*;
 
@@ -19,23 +20,25 @@ import android.net.DhcpInfo;
  * for the network backend
  */
 public class SambaDiscoveryAgent {
-
-	private UniAddress domain;
-	private NtlmPasswordAuthentication defaultAuth;
 	
+	private UniAddress domain;	
+	private NtlmPasswordAuthentication defaultAuth;
 	private LinkedList<Pingable> hosts;
 	
 	protected SambaDiscoveryAgent(LinkedList<Pingable> hosts) throws Exception{
 		this.hosts = hosts;
+		//Config.setProperty("jcifs.smb.client.username", "guest");
+		//Config.setProperty("jcifs.smb.client.domain", null);
+		//Config.setProperty("jcifs.smb.client.password", null);
 		
-		defaultAuth = new NtlmPasswordAuthentication("smb://192.168.1.11", "guest", "");
-		domain = UniAddress.getByName("smb://192.168.1.11");
-		SmbSession.logon(domain, defaultAuth);
+		//defaultAuth = NtlmPasswordAuthentication.ANONYMOUS;
+		//domain = UniAddress.getByName("smb://192.168.1.11");
+		//SmbSession.logon(domain, defaultAuth);
 	}
 	
 	public int findNumOfSambaShares() throws Exception{
 		
-		SmbFile[] server = new SmbFile("smb://192.168.1.11", defaultAuth).listFiles();			
+		SmbFile[] server = new SmbFile("smb://192.168.1.37").listFiles();			
 		return server.length;
 		
 	}
@@ -44,7 +47,7 @@ public class SambaDiscoveryAgent {
 		
 		LinkedList<String> fileList = new LinkedList<String>();
 		
-		SmbFile share = new SmbFile(path, defaultAuth);			
+		SmbFile share = new SmbFile(path);			
 		SmbFile[] fileArray = share.listFiles();		
 
 		for(SmbFile file : fileArray){
@@ -56,8 +59,4 @@ public class SambaDiscoveryAgent {
 		
 	}
 	
-	private String intToIp(int num){
-		return (num & 0xFF) + "." +  ((num >> 8 ) & 0xFF) + "."
-				+ ((num >> 16 ) & 0xFF) + "." + ((num >> 24 ) & 0xFF );
-	}
 }

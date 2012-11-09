@@ -36,7 +36,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 		info = wifiInfo.getDhcpInfo();
 		getIpRange();
-		findAvailHosts();
+		//findAvailHosts();
 	}
 	
 	/* 
@@ -59,10 +59,25 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	
 	private String scanningFunctions(String args) {
 		switch(Integer.parseInt(args)) {
-		case 0:
+		case 0:			
+			findAvailHosts();
 			return hostIter();	
 		case 1:
-			break; //return this.findNumberOfShares();
+			if(hosts == null)
+				findAvailHosts();
+			SambaDiscoveryAgent sAgent;
+			try {
+				sAgent = new SambaDiscoveryAgent(hosts);
+				String str = "";
+				LinkedList<String> fileList = sAgent.getFileListing("smb://192.168.1.37");
+				for(String _str : fileList){
+					str += _str + ", ";
+				}				
+				return str.substring(0, str.length() - 2);
+			} catch (Exception e) { 
+				e.printStackTrace();
+				return "Error";
+			}		
 		default:
 			break;
 		}
@@ -81,9 +96,16 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		case 2:
 			return this.determineSubnetMask();
 		case 3:
-			return this.pingRouter();
+			 try {
+				if(this.ping(InetAddress.getByName(intToIp(info.gateway))))
+					 return "Ping successful";
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			 return "Could not ping";
 		case 4:
-			return intToIp(highest) + " - " + intToIp(lowest);
+			return intToIp(lowest) + " - " + intToIp(highest);
 		default:
 			break;
 		}
@@ -140,7 +162,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	//ping a single address
 	private boolean ping(InetAddress addr) {
 		try {
-			if(addr.isReachable(10)) {
+			if(addr.isReachable(100)) {
 				return true;
 			}
 		} catch(IOException e) {}
@@ -149,12 +171,18 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	}
 	
 	private void findAvailHosts() {
+		
 		hosts = new LinkedList<Pingable>();
 		InetAddress curAddr;
+		int[] lowestOctets = getOctets(lowest);
+		int[] highestOctets = getOctets(highest);
+		int[] defaultOctets = getOctets(info.gateway);
 		
-		for(int i = lowest + 1; i < highest - 1; i++) {
+		String ipPrefix = defaultOctets[0] + "." + defaultOctets[1] + "." + defaultOctets[2] + ".";
+				
+		for(int i = lowestOctets[3]; i < highestOctets[3]; i++) {
 			try {
-				curAddr = InetAddress.getByName(intToIp(i));
+				curAddr = InetAddress.getByName(ipPrefix + i);
 			} catch(UnknownHostException e) { continue; }
 			
 			if(ping(curAddr)) {
@@ -165,7 +193,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	
 	private String hostIter() {
 		
-		if(hosts.size() == 0){
+		if(hosts.size() == 0 || hosts == null){
 			return "Error scanning"; 												
 		}
 		
@@ -176,28 +204,26 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 		return ans.substring(0, ans.length() - 2);
 	}
-	
-	private String pingRouter(){
-		try {
-			InetAddress[] addresses = InetAddress.getAllByName(intToIp(info.gateway));
-			for(InetAddress address : addresses){
-				try {
-					if(address.isReachable(1000)){
-						return "Successful ping";
-					}
-				} catch (IOException e) {					
-				}
-			}
-			
-		} catch (UnknownHostException e) {
+		
+	private String intToIp(int num){
+		String returnStr = "";
+		int[] octets = this.getOctets(num);
+		for(int i = 0; i < octets.length; i++){
+			returnStr += octets[i] + ".";
 		}
 		
-		return "Could not find host";
+		return returnStr.substring(0, returnStr.length() - 1);
 	}
 	
-	private String intToIp(int num){
-		return (num & 0xFF) + "." +  ((num >> 8 ) & 0xFF) + "."
-				+ ((num >> 16 ) & 0xFF) + "." + ((num >> 24 ) & 0xFF );
+	private int[] getOctets(int num){
+		int octets[] = new int[4];
+		
+		octets[0] = num & 0xFF;
+		octets[1] = (num >> 8) & 0xFF;
+		octets[2] = (num >> 16) & 0xFF;
+		octets[3] = (num >> 24) & 0xFF;
+		
+		return octets;
 	}
 	
 }
