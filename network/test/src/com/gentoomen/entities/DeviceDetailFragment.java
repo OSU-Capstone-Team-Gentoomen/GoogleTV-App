@@ -3,6 +3,7 @@ package com.gentoomen.entities;
 import com.gentoomen.sambadiscoverytest.discoveryagent.*;
 import com.gentoomen.entities.R;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -92,6 +93,8 @@ public class DeviceDetailFragment extends Fragment {
     }
     
     private void showToastMessage(String message){    	
-    	Toast.makeText((Context)getActivity(), message, Toast.LENGTH_SHORT).show();
+    	Dialog dia = new Dialog(getActivity());
+    	dia.setTitle(message);
+    	dia.show();
     }   
 }
