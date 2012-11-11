@@ -1,7 +1,5 @@
 package com.gentoomen.sambadiscoverytest.discoveryagent;
 
-import java.io.IOException;
-
 import android.content.Context;
 import android.net.*;
 import android.net.wifi.WifiManager;
@@ -10,13 +8,37 @@ import android.os.StrictMode;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import jcifs.smb.SmbFile;
 import com.gentoomen.entities.Pingable;
 
 /*
  * This class is used to discover file servers that can then be browsed
  */
-public class DiscoveryAgent extends AsyncTask<String, Void, String> {	
+public class DiscoveryAgent extends AsyncTask<String, Void, String> {
+	
+	private class ScanAddress implements Callable<Boolean> {
+		private InetAddress addr;
+		
+		public ScanAddress(InetAddress addr) {
+			this.addr = addr;
+		}
+
+		public Boolean call() throws Exception {
+			try {
+				new SmbFile("smb://" + addr.getHostName()).connect();
+			} catch(Exception e) { return false; }
+			return true;
+		}
+	}
 	
 	//private UniAddress domain;
 	//private NtlmPasswordAuthentication auth;
@@ -61,7 +83,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		switch(Integer.parseInt(args)) {
 		case 0:			
 			findAvailHosts();
-			return hostIter();	
+			//return findNumberOfShares();
+			return hostIter();
 		case 1:
 			if(hosts == null)
 				findAvailHosts();
@@ -118,23 +141,12 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	 * domain and auth credentials before
 	 * calling listfiles from server
 	 */
-	/*private String findNumberOfShares(){
+	private String findNumberOfShares(){
 		
-		String fileListing = "Files/Folders found: ";
-		
-		try {
-			LinkedList<String> list = new SambaDiscoveryAgent("192.168.1.11").getFileListing("smb://192.168.1.11");
-			for(String str : list){										
-				fileListing = fileListing + ", " + str;				
-			}
-			
-			return String.valueOf(fileListing);
-		} catch (Exception e) { 
-			e.printStackTrace();
-		}
+		String fileListing = "Files/Folders found: ";		
 		
 		return "Error";
-	}*/
+	}
 	
 	//no such thing as an unsigned byte in Java...
 	private void getIpRange() {
@@ -161,12 +173,19 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	
 	//ping a single address
 	private boolean ping(InetAddress addr) {
-		try {
-			if(addr.isReachable(100)) {
-				return true;
-			}
-		} catch(IOException e) {}
+		ExecutorService exec = Executors.newSingleThreadExecutor();
+		Future<Boolean> future = exec.submit(new ScanAddress(addr));
 		
+		try {
+			future.get(100, TimeUnit.MILLISECONDS);
+			exec.shutdownNow();
+			return true;
+		}
+		catch(TimeoutException e) {} 
+		catch (InterruptedException e) {}
+		catch (ExecutionException e) {}
+		
+		exec.shutdownNow();
 		return false;
 	}
 	
@@ -180,7 +199,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 		String ipPrefix = defaultOctets[0] + "." + defaultOctets[1] + "." + defaultOctets[2] + ".";
 				
-		for(int i = lowestOctets[3]; i < highestOctets[3]; i++) {
+		for(int i = lowestOctets[3] + 1; i < highestOctets[3] - 1; i++) {
 			try {
 				curAddr = InetAddress.getByName(ipPrefix + i);
 			} catch(UnknownHostException e) { continue; }
