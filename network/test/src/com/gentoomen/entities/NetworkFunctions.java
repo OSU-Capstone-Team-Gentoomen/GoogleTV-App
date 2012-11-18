@@ -20,7 +20,8 @@ public class NetworkFunctions {
 	};
 	
 	private static String[] pingingButtons = new String[]{
-		"Ping all addresses on network", "Scan for Samba on network"
+		"Scan for Samba on network", "Check single address for Samba",
+		"Start background network scan thread"
 	};
 	
     public static class NetworkFunctionItem {
