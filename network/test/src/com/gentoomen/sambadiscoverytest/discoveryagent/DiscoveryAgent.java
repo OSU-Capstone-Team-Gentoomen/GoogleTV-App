@@ -5,12 +5,17 @@ import android.net.*;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.StrictMode;
+import android.util.Log;
+
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -25,40 +30,22 @@ import com.gentoomen.entities.Pingable;
  */
 public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	
-	private class ScanAddress implements Callable<Boolean> {
-		private InetAddress addr;
-		
-		public ScanAddress(InetAddress addr) {
-			this.addr = addr;
-		}
-
-		public Boolean call() throws Exception {
-			try {
-				new SmbFile("smb://" + addr.getHostName()).connect();
-			} catch(Exception e) { return false; }
-			return true;
-		}
-	}
-	
-	//private UniAddress domain;
-	//private NtlmPasswordAuthentication auth;
 	protected DhcpInfo info;
-	
 	private WifiManager wifiInfo;
 	protected int lowest;
 	protected int highest;
-	private LinkedList<Pingable> hosts;
+	private SambaDiscoveryAgent sAgent;
+	private HashSet<Pingable> hosts = new HashSet<Pingable>();	
 	
 	//Set the thread policy to run off of the main thread. This will help keep the UI smooth
 	StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();	
 	
 	public DiscoveryAgent(Context context){
-		StrictMode.setThreadPolicy(policy);
-		wifiInfo = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-		
+		StrictMode.setThreadPolicy(policy);		
+		wifiInfo = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);		
 		info = wifiInfo.getDhcpInfo();
-		getIpRange();
-		//findAvailHosts();
+		getIpRange();		
+		findAvailHosts();		
 	}
 	
 	/* 
@@ -82,25 +69,12 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	private String scanningFunctions(String args) {
 		switch(Integer.parseInt(args)) {
 		case 0:			
-			findAvailHosts();
-			//return findNumberOfShares();
-			return hostIter();
+			return String.valueOf(hosts.size());			
 		case 1:
-			if(hosts == null)
-				findAvailHosts();
-			SambaDiscoveryAgent sAgent;
-			try {
-				sAgent = new SambaDiscoveryAgent(hosts);
-				String str = "";
-				LinkedList<String> fileList = sAgent.getFileListing("smb://192.168.1.37");
-				for(String _str : fileList){
-					str += _str + ", ";
-				}				
-				return str.substring(0, str.length() - 2);
-			} catch (Exception e) { 
-				e.printStackTrace();
-				return "Error";
-			}		
+			sAgent = new SambaDiscoveryAgent(hosts, getOctets(lowest), getOctets(highest), getOctets(info.gateway));
+			return String.valueOf(sAgent.findNumOfSambaShares());			
+		case 2:
+			
 		default:
 			break;
 		}
@@ -118,15 +92,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 			return this.determineIPAddress();			
 		case 2:
 			return this.determineSubnetMask();
-		case 3:
-			 try {
-				if(this.ping(InetAddress.getByName(intToIp(info.gateway))))
-					 return "Ping successful";
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			 return "Could not ping";
+		case 3:			
+			 break;
 		case 4:
 			return intToIp(lowest) + " - " + intToIp(highest);
 		default:
@@ -144,7 +111,6 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	private String findNumberOfShares(){
 		
 		String fileListing = "Files/Folders found: ";		
-		
 		return "Error";
 	}
 	
@@ -172,42 +138,21 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	}
 	
 	//ping a single address
-	private boolean ping(InetAddress addr) {
-		ExecutorService exec = Executors.newSingleThreadExecutor();
-		Future<Boolean> future = exec.submit(new ScanAddress(addr));
-		
-		try {
-			future.get(100, TimeUnit.MILLISECONDS);
-			exec.shutdownNow();
-			return true;
-		}
-		catch(TimeoutException e) {} 
-		catch (InterruptedException e) {}
-		catch (ExecutionException e) {}
-		
-		exec.shutdownNow();
+	private boolean ping(InetAddress addr) {		
 		return false;
 	}
 	
 	private void findAvailHosts() {
-		
-		hosts = new LinkedList<Pingable>();
-		InetAddress curAddr;
-		int[] lowestOctets = getOctets(lowest);
-		int[] highestOctets = getOctets(highest);
-		int[] defaultOctets = getOctets(info.gateway);
-		
-		String ipPrefix = defaultOctets[0] + "." + defaultOctets[1] + "." + defaultOctets[2] + ".";
-				
-		for(int i = lowestOctets[3] + 1; i < highestOctets[3] - 1; i++) {
-			try {
-				curAddr = InetAddress.getByName(ipPrefix + i);
-			} catch(UnknownHostException e) { continue; }
-			
-			if(ping(curAddr)) {
-				hosts.add(new Pingable(curAddr));
-			}
-		}
+		ExecutorService exec = Executors.newFixedThreadPool(4);
+		int start = getOctets(lowest)[3];
+		int end = getOctets(highest)[3];
+		int[] gateway = getOctets(info.gateway);
+		String ipPrefix = gateway[0] + "." + gateway[1] + "." + gateway[2] + ".";
+		for(int i = start + 1; i < end - 1; i++) {
+			exec.submit(new ThreadedInitialScan(ipPrefix + i));
+		}		
+		exec.shutdown(); /*ExecutorService will no longer accept new jobs*/
+		while(!exec.isTerminated());
 	}
 	
 	private String hostIter() {
@@ -244,5 +189,31 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 		return octets;
 	}
-	
+
+	private class ThreadedInitialScan implements Runnable {
+		private String ipAddr;
+
+		public ThreadedInitialScan(String ip) {
+			this.ipAddr = ip;
+		}
+		
+		public void run() {					
+			try {
+				InetAddress _addr = InetAddress.getByName(ipAddr);
+				_addr.isReachable(25);
+				if(InetAddress.getByName(ipAddr).isReachable(50)) {
+					Log.d("Creole-Debug", ipAddr + " is reachable");
+					hosts.add(new Pingable(InetAddress.getByName(ipAddr)));
+				}
+				else {
+					Log.d("Creole-Debug", ipAddr + " is not reachable");
+				}
+			} catch(UnknownHostException e) {
+				Log.d("Creole-Debug", "UnknownHost exception thrown");
+			}
+			catch(IOException e) {
+				Log.d("Creole-Debug", "IOException thrown");
+			}
+		}
+	}
 }
