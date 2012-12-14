@@ -1,8 +1,0 @@
-<resources>
-
-    <string name="app_name">SambaDisoveryTest</string>
-    <string name="title_device_detail">Device Detail</string>
-    <string name="title_device_list">Network Tester</string>
-    <string name="defaultGatewayButton">Default Gateway test</string>
-
-</resources>

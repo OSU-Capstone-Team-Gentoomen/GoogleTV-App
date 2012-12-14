@@ -1,0 +1,12 @@
+<resources>
+
+    <string name="app_name">Conduit</string>
+    <string name="menu_exit">Exit</string>
+    
+    <string name="title_activity_main">Conduit</string>
+
+    <string name="tab_c">Internal</string>
+    
+    <!-- Action Bar -->
+    <string name="leftnav_bar_option_label">Options</string>
+</resources>
