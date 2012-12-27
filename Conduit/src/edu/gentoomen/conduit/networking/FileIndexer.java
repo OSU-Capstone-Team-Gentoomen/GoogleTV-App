@@ -4,7 +4,9 @@ import jcifs.smb.SmbFile;
 import android.os.AsyncTask;
 
 /*
- * This class will take an SMBFile
+ * This class will take an Object
+ * and determine the protocol used
+ * and index the directory recursively
  */
 
 public class FileIndexer extends AsyncTask<Object, Void, String> {
@@ -17,10 +19,11 @@ public class FileIndexer extends AsyncTask<Object, Void, String> {
 			indexSambaDrive((SmbFile)params[0]);
 					
 		return null;
+		
 	}
 	
 	private void indexSambaDrive(SmbFile file) {
-		//TODO Algorithm for indexing a samba shared drive and writing it to the content provider
+		
 	}
 
 }

@@ -53,13 +53,15 @@ public class NetworkContentProvider extends ContentProvider {
 			Uri.parse("content://" + AUTHORITY + 
 					"/" + BASE_PATH);
 	
-	public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE 
-			+ "/devices";
+	public static final String CONTENT_TYPE = 
+			ContentResolver.CURSOR_DIR_BASE_TYPE  + "/devices";
 	
-	public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
-			+ "/device";
+	public static final String CONTENT_ITEM_TYPE = 
+			ContentResolver.CURSOR_ITEM_BASE_TYPE + "/device";
 	
-	private static final UriMatcher mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+	private static final UriMatcher mUriMatcher = 
+			new UriMatcher(UriMatcher.NO_MATCH);
+	
 	static{
 		
 		mUriMatcher.addURI(AUTHORITY, BASE_PATH, DEVICE);
@@ -77,7 +79,8 @@ public class NetworkContentProvider extends ContentProvider {
 				+ COL_ONLINE     + " integer not null, " 
 				+ COL_SAMBA      + " integer not null);"; 
 		
-		public DeviceHostDatabaseHelper(Context context, String name, CursorFactory factory, int version) {
+		public DeviceHostDatabaseHelper(Context context, String name, 
+										CursorFactory factory, int version) {
 			super(context, name, factory, version);		
 		}
 
@@ -89,7 +92,9 @@ public class NetworkContentProvider extends ContentProvider {
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 			
-			Log.d("Will-Debug", "Upgrading DB, [" + oldVersion + "] -> [" + newVersion + "]");
+			Log.d("Will-Debug", "Upgrading DB, [" + oldVersion + "] -> [" 
+				  + newVersion + "]");
+			
 			db.execSQL("DROP TABLE IF EXISTS " + TABLE_DEVICES);
 			onCreate(db);	
 			
@@ -186,7 +191,8 @@ public class NetworkContentProvider extends ContentProvider {
 	}
 
 	@Override
-	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+	public int update(Uri uri, ContentValues values, 
+					  String selection, String[] selectionArgs) {
 		
 		int rowsUpdated = 0;
 		
@@ -216,8 +222,11 @@ public class NetworkContentProvider extends ContentProvider {
 		};
 		
 		if(projection != null){
-			HashSet<String> availColumns = new HashSet<String>(Arrays.asList(avail));
-			HashSet<String> reqColumns = new HashSet<String>(Arrays.asList(projection));
+			HashSet<String> availColumns = 
+					new HashSet<String>(Arrays.asList(avail));
+			
+			HashSet<String> reqColumns = 
+					new HashSet<String>(Arrays.asList(projection));
 			
 			//Check if all columns that were requested are available
 			if(!availColumns.containsAll(reqColumns))

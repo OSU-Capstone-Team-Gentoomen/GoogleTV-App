@@ -23,10 +23,10 @@ import edu.gentoomen.conduit.networking.Pingable;
 public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 	/*Emulator settings*/
-	private final String  EMU_IP_PREFIX = "192.168.1.";
-	private final int     EMU_IP_LOW = 1;
-	private final int     EMU_IP_HIGH = 254;	
-	private final boolean EMU_MODE = true;
+	private final String                EMU_IP_PREFIX = "192.168.1.";
+	private final int                   EMU_IP_LOW = 1;
+	private final int                   EMU_IP_HIGH = 254;	
+	private final boolean               EMU_MODE = false;
 	
 	/*Static fields for this class*/
 	private static boolean              initialScanCompleted = false;
@@ -42,14 +42,17 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	protected static int                lowest = 0;
 	protected static int                highest = 0;
 	
-	
-	
 	/*Async scanning functions*/
-	AsyncTask<String, Void, String> reachable;
-	AsyncTask<Void, Void, String>   arp;
+	AsyncTask<String, Void, String>     reachable;
+	AsyncTask<Void, Void, String>       arp;
 			
-	/*Set the thread policy to run off of the main thread. This will help keep the UI smooth*/
-	static StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+	/*
+	 * Set the thread policy to run off of the main thread. 
+	 * This will help keep the UI smooth
+	 */
+	static StrictMode.ThreadPolicy policy = 
+			new StrictMode.ThreadPolicy.Builder().permitAll().build();
+	
 	static {
 		
 		/*Set our thread policy*/
@@ -64,9 +67,10 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 		/*Get our wifi service for our device networking information*/
 		if(wifiInfo == null) {
-			wifiInfo = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);	
+			wifiInfo = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
 			info = wifiInfo.getDhcpInfo();
 		}
+		
 	}
 		
 	/* 
@@ -88,7 +92,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	/*how many scanned IPs are stored in the database*/
 	public int getScannedCount() {
 		
-		Cursor c = resolver.query(NetworkContentProvider.CONTENT_URI, null, null, null, null);		
+		Cursor c = resolver.query(NetworkContentProvider.CONTENT_URI, 
+								  null, null, null, null);		
 		Log.d("Will-Debug", "Found hosts: " + c.getCount());
 		return c.getCount();
 		
@@ -98,7 +103,11 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	public int getOnlineCount() {
 		
 		String[] projection = { NetworkContentProvider.COL_ONLINE };
-		Cursor c = resolver.query(NetworkContentProvider.CONTENT_URI, projection, NetworkContentProvider.COL_ONLINE + " = 1", null, null);
+		
+		Cursor c = resolver.query(NetworkContentProvider.CONTENT_URI, projection,
+								  NetworkContentProvider.COL_ONLINE + " = 1",
+								  null, null);
+		
 		return c.getCount();
 		
 	}
@@ -106,8 +115,16 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	/*how many online IPs have a samba share*/
 	public int getSambaCount() {
 		
-		String[] projection = { NetworkContentProvider.COL_ONLINE, NetworkContentProvider.COL_SAMBA };
-		Cursor c = resolver.query(NetworkContentProvider.CONTENT_URI, projection, NetworkContentProvider.COL_ONLINE + " = 1 AND " + NetworkContentProvider.COL_SAMBA + " = 1", null, null);
+		String[] projection = { 
+				NetworkContentProvider.COL_ONLINE, 
+				NetworkContentProvider.COL_SAMBA 
+		};
+		
+		Cursor c = resolver.query(NetworkContentProvider.CONTENT_URI, 
+								  projection, 
+								  NetworkContentProvider.COL_ONLINE + " = 1 AND "
+								  + NetworkContentProvider.COL_SAMBA + " = 1", 
+								  null, null);
 		return c.getCount();
 		
 	}
@@ -124,18 +141,6 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 			highest = lowest | (~netmask);
 		}
 		
-	}
-		
-	private String determineDefaultGateway() {	
-		return intToIp(info.gateway);
-	}
-	
-	private String determineIPAddress() {
-		return intToIp(info.ipAddress);
-	}
-	
-	private String determineSubnetMask() {
-		return intToIp(info.netmask);
 	}
 	
 	/*Scan the entire subnet to find all hosts without a firewall*/
@@ -267,7 +272,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 		values.put(NetworkContentProvider.COL_SAMBA, flag);
 		values.put(NetworkContentProvider.COL_ONLINE, 1);
-		resolver.update(NetworkContentProvider.CONTENT_URI, values, NetworkContentProvider.ID + "=" + ip.hashCode(), null);
+		resolver.update(NetworkContentProvider.CONTENT_URI, values, 
+						NetworkContentProvider.ID + "=" + ip.hashCode(), null);
 		
 	}
 }
