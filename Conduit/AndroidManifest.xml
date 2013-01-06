@@ -39,6 +39,11 @@
         	android:authorities="edu.gentoomen.conduit.networking"
         	android:exported="false">
 		</provider>
+		<provider
+        	android:name="MediaContentProvider"
+        	android:authorities="edu.gentoomen.conduit.media"
+        	android:exported="false">
+		</provider>
         <activity
             android:name=".PlayerActivity"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen">

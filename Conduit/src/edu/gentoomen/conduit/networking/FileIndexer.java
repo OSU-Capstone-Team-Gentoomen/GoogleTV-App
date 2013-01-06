@@ -1,6 +1,8 @@
 package edu.gentoomen.conduit.networking;
 
+import edu.gentoomen.conduit.MediaContentProvider;
 import jcifs.smb.SmbFile;
+import android.content.ContentValues;
 import android.os.AsyncTask;
 
 /*
@@ -24,6 +26,22 @@ public class FileIndexer extends AsyncTask<Object, Void, String> {
 	
 	private void indexSambaDrive(SmbFile file) {
 		
+		
+		
 	}
-
+	
+	private void insertIntoProvider(SmbFile file) {
+		
+		ContentValues values = new ContentValues();
+		String extension = "unknown";
+		
+		int index = file.getName().lastIndexOf(".");
+		if (index > 0)
+			extension = file.getName().substring(index + 1);
+		
+		values.put(MediaContentProvider.COL_NAME, file.getName());
+		values.put(MediaContentProvider.COL_PATH, file.getPath());
+		values.put(MediaContentProvider.COL_TYPE, extension);
+		
+	}
 }

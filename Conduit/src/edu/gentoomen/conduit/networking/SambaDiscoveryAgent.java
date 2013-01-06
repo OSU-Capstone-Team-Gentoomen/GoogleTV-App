@@ -1,21 +1,20 @@
 package edu.gentoomen.conduit.networking;
 
 import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import jcifs.netbios.NbtAddress;
+import jcifs.smb.NtlmPasswordAuthentication;
+import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.util.Log;
-
 import edu.gentoomen.conduit.NetworkContentProvider;
-import edu.gentoomen.conduit.networking.Pingable;
+import edu.gentoomen.utilities.Services;
 
 
 /*
@@ -24,47 +23,42 @@ import edu.gentoomen.conduit.networking.Pingable;
  */
 public class SambaDiscoveryAgent {
 	
+	private static final String TAG = "Samba Disc";	
+	
+	private static NtlmPasswordAuthentication auth = 
+								NtlmPasswordAuthentication.ANONYMOUS;
+		
 	/*Table containing all online hosts*/
-	private HashSet<Pingable> hosts;
+	private HashSet<Pingable>   hosts;
 	
 	/*Set our ExecutorService to use only one thread for a background scan*/
-	private ExecutorService backgroundScanThread = Executors.newSingleThreadExecutor();	
+	private ExecutorService backgroundScanThread = 
+						Executors.newSingleThreadExecutor();
 	
 	protected SambaDiscoveryAgent(HashSet<Pingable> hosts) {
 		
 		this.hosts = hosts;
-		this.initalSambaScan();		
-		this.backgroundSambaScan();
+		this.initalSambaScan();
+		//this.backgroundSambaScan();
 		
 	}
-	
-	/*First scan across all the available hosts*/
+
 	private void initalSambaScan(){
 		
-		Log.d("Will-Debug","Starting initial scan");
-		ExecutorService executor = Executors.newFixedThreadPool(4);
-		
+		Log.d("Will-Debug","Starting initial scan");		
+		Log.d(TAG, "set size " + hosts.size());		
 		for (Pingable p : hosts) {
-		
-			Future<Pingable> result = executor.submit(new InitialScan(p.addr.getHostAddress()));
-			Log.d("Will-Debug", "Intial Scanning - Pinging " + p.addr.getHostAddress());
+			Log.d(TAG, "checking " + p.addr.getHostAddress());
 			try {
-				/*
-				 * Attempt to get the results of our connection after
-				 * 50ms and update the ContentProvider
-				 */
-				if (result.get(50, TimeUnit.MILLISECONDS) != null) {
-					p.hasSambaShare = true;
-					DiscoveryAgent.changeFlag(NetworkContentProvider.COL_SAMBA, 
-											  1, p.addr.getHostAddress());
+				if(NbtAddress.getByName(p.addr.getHostAddress()).isActive()) {
+					Log.d(TAG, "Found Samba Share at " + p.addr.getHostAddress());					
+					DiscoveryAgent.addNewHost(p, Services.Samba);					
+				} else {
+					Log.d(TAG, "No share at " + p.addr.getHostAddress());
 				}
-			} catch (InterruptedException e) {
-			} catch (ExecutionException e) {
-			} catch (TimeoutException e) {
-				Log.d("Will-debug", "Intial scan for Samba on IP "
-					  + p.addr.getHostAddress() + " has timed out");
+			} catch (UnknownHostException e) {
+				Log.d(TAG, "Could not find host: " + e.getMessage());
 			}
-			
 		}
 		
 	}
@@ -91,36 +85,6 @@ public class SambaDiscoveryAgent {
 		
 	private void backgroundSambaScan() {			
 		backgroundScanThread.submit(new BackgroundScan());		
-	}
-	
-	/*
-	 * Will attempt to do a samba connection to a single IP
-	 * with a 50ms timeout
-	 */
-	private class InitialScan implements Callable<Pingable> {
-		
-		private String ipAddress;		
-		
-		public InitialScan(String ipAddress){
-			this.ipAddress = ipAddress;	
-		}
-
-		public Pingable call() {
-			
-			Log.d("Will-Debug", "pinging for samba at " + ipAddress);
-			
-			/*Attempt the samba connection*/
-			try {
-					new SmbFile("smb://" + ipAddress).connect();
-					Log.d("Will-Debug", "Found samba share at " + ipAddress);					
-					return new Pingable(InetAddress.getByName(ipAddress));				
-			} catch (Exception e) { }
-			
-			Log.d("Will-Debug", "Found no samba share at " + ipAddress);
-			
-			return null;
-			
-		}
 	}
 	
 	/*Attempt to connect to a samba share with max timeout*/

@@ -6,9 +6,11 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 public class ArpScan extends AsyncTask<Void, Void, String> {
 
+	String TAG = "ARP";
 	String ipAddress;
 	
 	@Override
@@ -26,6 +28,7 @@ public class ArpScan extends AsyncTask<Void, Void, String> {
 						String macAddress = split[3];
 						String ip = split[0];
 						if(macAddress.matches("..:..:..:..:..:..") && !macAddress.equals("00:00:00:00:00:00")) {
+							Log.d(TAG, "Found host " + ip);
 							addNewHost(ip);							
 						}						
 					}
@@ -38,7 +41,7 @@ public class ArpScan extends AsyncTask<Void, Void, String> {
 	}
 	
 	private void addNewHost(String ip) {
-		DiscoveryAgent.addNewHost(ip);		
+		DiscoveryAgent.addNewHostToSet(ip);		
 	}
 
 }

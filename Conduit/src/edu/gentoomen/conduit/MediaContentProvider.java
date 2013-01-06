@@ -1,35 +1,24 @@
 package edu.gentoomen.conduit;
 
-import edu.gentoomen.utilities.DatabaseUtility;
-import jcifs.util.MD4;
+import jcifs.smb.SmbException;
+import jcifs.smb.SmbFile;
+import edu.gentoomen.conduit.networking.DeviceNavigator;
 import android.content.ContentProvider;
-import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteQueryBuilder;
+import android.database.MatrixCursor;
 import android.net.Uri;
+import android.util.Log;
 
 public class MediaContentProvider extends ContentProvider {
 	
-	/*Our Database*/
-	private SQLiteDatabase mDB;
-	
-	/*Name of our table*/
-	private static final String TABLE_MEDIA = "media"; 
-	
 	/*Constants used to differentiate between different URIs*/
-	private static final int    MEDIA = 666;
-	private static final int    MEDIA_ID = 667;
+	public static final int    MEDIA = 666;	
+	public static final int	   FOLDER = 667;
 	
-	/*private constants*/
-	private static final int    DB_VERSION = 1;
-	private static final String DB_NAME = "Media.db";
-	private static final String AUTHORITY = "edu.gentoomen.condiut.networking";
+	/*private constants*/	
+	private static final String AUTHORITY = "edu.gentoomen.conduit.media";
 	private static final String BASE_PATH = "media";
 	private static final String TAG = "MediaContentProvider";
 	
@@ -64,68 +53,15 @@ public class MediaContentProvider extends ContentProvider {
 	
 	static {
 		
-		mUriMatcher.addURI(AUTHORITY, BASE_PATH, MEDIA);
-		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/#", MEDIA);
+		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/", FOLDER);
+		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/file", MEDIA);
 		
 	}
 	
-	/*Our DB Helper Class*/
-	private static class MediaDatabaseHelpder extends SQLiteOpenHelper {
-
-		private static final String CREATE_TABLE_MEDIA =
-				"create table " + TABLE_MEDIA + " ("
-				+ ID            + " integer autoincrement primary key, "
-				+ COL_NAME      + " text not null, "
-				+ COL_PATH      + " text not null, "
-				+ COL_TYPE 		+ " text not null)";
-		
-		public MediaDatabaseHelpder(Context context, String name,
-				CursorFactory factory, int version) {
-			super(context, name, factory, version);
-			
-		}
-
-		@Override
-		public void onCreate(SQLiteDatabase db) {
-			db.execSQL(CREATE_TABLE_MEDIA);			
-		}
-
-		@Override
-		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			
-			db.execSQL("DROP TABLE IF EXISTS " + TABLE_MEDIA);
-			onCreate(db);
-			
-		}
-		
-	}	
 	
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		
-		int uriType = mUriMatcher.match(uri);
-		int rowsRemoved = 0;
-		
-		switch (uriType) {
-		case MEDIA:
-			rowsRemoved = mDB.delete(TABLE_MEDIA, selection, selectionArgs);
-			break;
-		case MEDIA_ID:
-			String id = uri.getLastPathSegment();
-			
-			if (selection.isEmpty())
-				rowsRemoved = mDB.delete(TABLE_MEDIA, ID
-										 + "=" + id 
-										 + selection, 
-										 selectionArgs);
-			break;
-		default:
-			throw new IllegalArgumentException("Unknown URI: " + uri);
-		}
-		
-		getContext().getContentResolver().notifyChange(uri, null);
-		return rowsRemoved;
-		
+		return 0;
 	}
 
 	@Override
@@ -136,61 +72,46 @@ public class MediaContentProvider extends ContentProvider {
 
 	@Override
 	public Uri insert(Uri inuri, ContentValues values) {
-		
-		long rowID = mDB.insert(TABLE_MEDIA, null, values);
-		if (rowID > 0) {
-			Uri uri = ContentUris.withAppendedId(MEDIA_URI, rowID);
-			getContext().getContentResolver().notifyChange(uri, null);
-			return uri;
-		}
-		
 		return null;
 	}
 
 	@Override
-	public boolean onCreate() {
-		
-		Context context = getContext();
-		context.deleteDatabase(DB_NAME);
-		MediaDatabaseHelpder helper = 
-				new MediaDatabaseHelpder(context, DB_NAME, null, DB_VERSION);
-		
-		mDB = helper.getWritableDatabase();
-		
-		if (mDB == null)
-			return true;
-		else
-			return false;
+	public boolean onCreate() {			
+		return true;
 	}
 
 	@Override
-	public Cursor query(Uri uri, String[] projection, String selection,
+	public Cursor query(Uri uri, String[] projection, String path,
 			String[] selectionArgs, String sortOrder) {
 		
-		/*Use the query builder to create our query*/
-		SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
-		queryBuilder.setTables(TABLE_MEDIA);
-		
-		/*Check if the query has requested a nonexistent column*/
-		DatabaseUtility.checkColumns(projection, availableColumns);
+		MatrixCursor curse = new MatrixCursor(availableColumns);
+		Log.d(TAG, "Querying for files, uri given: " + uri);
+		Log.d(TAG, "Selected path " + path);
 		
 		switch (mUriMatcher.match(uri)) {
-		case MEDIA_ID:
-			queryBuilder.appendWhere(ID + "=" + uri.getLastPathSegment());			
 		case MEDIA:
+			Log.d(TAG, "Media file type selected");
+			break;
+		case FOLDER:
+			Log.d(TAG, "folder type selected, doing LS of" + path);
+			int counter = 1;
+			for (SmbFile f : DeviceNavigator.deviceCD(path)) {
+				try {
+					if (f.isDirectory()) 
+						curse.newRow().add(counter).add(f.getPath()).add(f.getName().substring(0, f.getName().length() - 1)).add(FOLDER);
+					else 
+						curse.newRow().add(counter).add(f.getPath()).add(f.getName()).add(MEDIA);
+					counter++;
+				} catch (SmbException e) {
+					Log.d(TAG, "SmbException: " + e.getMessage());
+				}
+			}
 			break;
 		default:
-			throw new IllegalArgumentException("Unknown URI: " + uri);
+			Log.d(TAG, "Unknown URI " + uri);
+			return null;
 		}
 		
-		Cursor curse = queryBuilder.query(mDB, 
-										  projection, 
-										  selection, 
-										  selectionArgs, 
-										  null, null, 
-										  sortOrder);
-		
-		curse.setNotificationUri(getContext().getContentResolver(), uri);
 		return curse;
 		
 	}
@@ -198,23 +119,7 @@ public class MediaContentProvider extends ContentProvider {
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
-		
-		int rowsUpdated = 0;
-		
-		switch (mUriMatcher.match(uri))	{
-		case MEDIA_ID:
-			rowsUpdated = mDB.update(TABLE_MEDIA, 
-									 values, 
-									 selection, 
-									 selectionArgs);
-		case MEDIA:
-			break;
-		default:
-			throw new IllegalArgumentException("Unknown URI: " + uri);			
-		}
-		
-		return rowsUpdated;
-		
+		return 0;
 	}
 
 }

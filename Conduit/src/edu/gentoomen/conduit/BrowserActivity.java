@@ -34,8 +34,11 @@ public class BrowserActivity extends FragmentActivity
         NetworkContentProvider.COL_IP_ADDRESS,
     };
     
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        
+    static final String[] SELECT_SAMBA = new String[] {
+    	NetworkContentProvider.COL_SAMBA + "=1"
+    };
+    
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {        
         return new CursorLoader(this, NetworkContentProvider.CONTENT_URI, SUMMARY_PROJECTION, "", null, "");
     }
 
@@ -47,6 +50,7 @@ public class BrowserActivity extends FragmentActivity
     	while (data.moveToNext()) {
 	        bar.addTab(bar.newTab()
 	    		.setText(data.getString(1))
+	    		.setTag(data.getString(1))
 	    		.setIcon(R.drawable.tab_d)
 	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);
     	}
@@ -68,8 +72,9 @@ public class BrowserActivity extends FragmentActivity
     	
     	@Override
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
-        	Log.d(LOG_TAG, "tab selected " + mPath);
-        	mFileList.setPath(mPath);
+        	Log.d(LOG_TAG, "tab selected " + tab.getTag());
+        	mFileList.setPath(tab.getTag().toString());
+        	mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
         	ActionBar bar = getLeftNavBar();
         	bar.setTitle(mTitle);
         }
@@ -133,7 +138,8 @@ public class BrowserActivity extends FragmentActivity
 
         bar.addTab(bar.newTab()
     		.setText(R.string.tab_c)
-    		.setIcon(R.drawable.tab_c)
+    		.setTag(R.string.tab_c)
+    		.setIcon(R.drawable.tab_c)    		
             .setTabListener(new TabListener(fileList, getResources().getString(R.string.tab_c), "local")), true);
     }
     

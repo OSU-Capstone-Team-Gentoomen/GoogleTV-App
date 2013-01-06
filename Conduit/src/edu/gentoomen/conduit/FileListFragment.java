@@ -18,6 +18,9 @@ import android.util.Log;
 public class FileListFragment extends ListFragment
 	implements LoaderManager.LoaderCallbacks<Cursor> {
 	
+	public static final int TYPE_FOLDER = 0;
+	public static final int TYPE_FILE = 1;
+	
 	private static final String LOG_TAG = "FileListFragment";
 	SimpleCursorAdapter mAdapter;
 	
@@ -35,8 +38,10 @@ public class FileListFragment extends ListFragment
         public void onPathChanged(String path) {}
     };
     
-	Uri baseUri = Uri.parse("content://edu.gentoomen.conduit.dummyprovider");
-	String currentPath = "one";
+	//Uri baseUri = Uri.parse("content://edu.gentoomen.conduit.dummyprovider");
+    Uri baseUri = MediaContentProvider.MEDIA_URI;
+	String currentPath = "0";
+	int selectedType = -1;
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
@@ -60,9 +65,9 @@ public class FileListFragment extends ListFragment
     	       textView.setCompoundDrawablePadding(10);
     		   if (columnIndex == 3) {
     	    	   int type = cursor.getInt(columnIndex);
-    	    	   if (type == DummyProvider.FILE_TYPE) {
+    	    	   if (type == MediaContentProvider.MEDIA) {
     	    		   textView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.video, 0, 0, 0);
-    	    	   } else if (type == DummyProvider.DIR_TYPE) {
+    	    	   } else if (type == MediaContentProvider.FOLDER) {
     	    		   textView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.dir, 0, 0, 0);
     	    	   }
     	           return true;
@@ -101,11 +106,12 @@ public class FileListFragment extends ListFragment
         
         Cursor i = (Cursor) listView.getItemAtPosition(position);
         
+        /*Need to get rid of magic numbers*/
         switch (i.getInt(3)) {
-        case DummyProvider.FILE_TYPE:
+        case MediaContentProvider.MEDIA:
         	mCallbacks.onFileSelected(i.getString(2));
         	break;
-        case DummyProvider.DIR_TYPE:
+        case MediaContentProvider.FOLDER:
         	setPath(i.getString(2));
         	break;
         }
@@ -119,10 +125,15 @@ public class FileListFragment extends ListFragment
         "type",
     };
 
+
     public void setPath(String path) {
     	currentPath = path;
     	getLoaderManager().restartLoader(0, null, this);
     	mCallbacks.onPathChanged(path);
+    }
+    
+    public void setSelectedType(int type) {
+    	selectedType = type;
     }
     
     public boolean up() {
@@ -137,10 +148,31 @@ public class FileListFragment extends ListFragment
     }
     
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-    	Uri uri = Uri.withAppendedPath(baseUri, currentPath);
+    	
+    	Uri uri;
+    	Log.d(LOG_TAG, "Selected type " + selectedType);
+    	
+//    	if (selectedType == TYPE_FOLDER) {
+//    		 uri = Uri.withAppendedPath(baseUri, "");
+//    	} else {
+//    		 uri = Uri.withAppendedPath(baseUri, "file");
+//    	}
+    	
+    	switch (selectedType) {
+    	case TYPE_FOLDER:
+    		uri = Uri.withAppendedPath(baseUri, "");
+    		break;
+    	case TYPE_FILE:
+    		uri = Uri.withAppendedPath(baseUri, "file");
+    		break;
+    	default:
+    		uri = Uri.withAppendedPath(baseUri, "INVALID");
+    		break;
+    	}
+    	
     	setListShownNoAnimation(false);
         return new CursorLoader(getActivity(), uri,
-                SUMMARY_PROJECTION, "", null, "");
+                SUMMARY_PROJECTION, currentPath, null, "");
     }
 
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {

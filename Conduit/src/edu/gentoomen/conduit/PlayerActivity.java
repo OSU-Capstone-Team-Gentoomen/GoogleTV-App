@@ -9,7 +9,7 @@ import android.widget.VideoView;
 public class PlayerActivity extends Activity {
 
 	String SrcPath = "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4";
-	
+		
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);

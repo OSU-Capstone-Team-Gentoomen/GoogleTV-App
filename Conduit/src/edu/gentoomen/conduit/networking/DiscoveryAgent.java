@@ -3,6 +3,7 @@ package edu.gentoomen.conduit.networking;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -16,6 +17,7 @@ import android.util.Log;
 
 import edu.gentoomen.conduit.NetworkContentProvider;
 import edu.gentoomen.conduit.networking.Pingable;
+import edu.gentoomen.utilities.Services;
 
 /*
  * This class is used to discover file servers that can then be browsed
@@ -83,6 +85,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		if (!initialScanCompleted) {			
 			getIpRange();
 			findAvailHosts();
+			sAgent = new SambaDiscoveryAgent(hosts);				
 		}
 		
 		return "";
@@ -167,8 +170,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		/*Iterate over the entire network and ping each ip address*/
 		for (int i = start + 1; i < end - 1; i++) {
 			reachable = new CheckReachable();
-			reachable.execute(ipPrefix + i, "25");
-			sleep(25);
+			reachable.execute(ipPrefix + i, "15");
+			sleep(15);
 			if (isCancelled()) {
 				reachable.cancel(true);
 				return;
@@ -181,6 +184,12 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		if (isCancelled()) {
 			arp.cancel(true);
 			return;
+		}
+		
+		try {
+			arp.get();
+		} catch (InterruptedException e) {		
+		} catch (ExecutionException e) {			
 		}
 		
 		initialScanCompleted = true;
@@ -198,24 +207,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		} catch (InterruptedException e) { }
 		
 	}
-	
-	/*Clear our all our entries in our database*/
-	private void clearDatabase() {		
-		
-	}
-	
-	private String intToIp(int num){
-		
-		String returnStr = "";
-		int[] octets = this.getOctets(num);
-		for (int i = 0; i < octets.length; i++) {
-			returnStr += octets[i] + ".";
-		}
-		
-		return returnStr.substring(0, returnStr.length() - 1);
-		
-	}
-	
+
 	/*
 	 * Get the four parts of an ip address from the binary
 	 * representation passed in	
@@ -233,25 +225,34 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 	}
 	
+	protected static void addNewHostToSet(String ip) {
+		try {
+			hosts.add(new Pingable(InetAddress.getByName(ip)));
+		} catch (UnknownHostException e) { 		
+		}
+	}
+	
 	/*
 	 * Called when a new host is found from the
 	 * arp table scan. Will attempt to add the new host
 	 * to the ContentProvider
 	 */
-	protected static void addNewHost(String ip) {
+	protected static void addNewHost(Pingable p, Services s) {
 		
 		ContentValues values = new ContentValues();
+		String ip = p.addr.getHostAddress();
+						
+		values.put(NetworkContentProvider.ID, ip.hashCode());
+		values.put(NetworkContentProvider.COL_IP_ADDRESS, ip);
+		values.put(NetworkContentProvider.COL_ONLINE, 1);
 		
-		try {			
-			hosts.add(new Pingable(InetAddress.getByName(ip)));
-			values.put(NetworkContentProvider.ID, ip.hashCode());
-			values.put(NetworkContentProvider.COL_IP_ADDRESS, ip);
-			values.put(NetworkContentProvider.COL_ONLINE, 1);
+		if(s == Services.Samba)
 			values.put(NetworkContentProvider.COL_SAMBA, 1);
-			resolver.insert(NetworkContentProvider.CONTENT_URI, values);
-		} catch (UnknownHostException e) {			
-			e.printStackTrace();
-		}
+		else
+			values.put(NetworkContentProvider.COL_SAMBA, 0);
+		
+		resolver.insert(NetworkContentProvider.CONTENT_URI, values);
+
 		
 	}
 	
@@ -262,13 +263,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	 */
 	protected static void changeFlag(String column, int flag, String ip) {
 		
-		ContentValues values = new ContentValues();
-		
-		for (Pingable p : hosts) {
-			if (p.addr.getHostAddress().equalsIgnoreCase(ip)) {
-				p.hasSambaShare = true;
-			}
-		}
+		ContentValues values = new ContentValues();		
 		
 		values.put(NetworkContentProvider.COL_SAMBA, flag);
 		values.put(NetworkContentProvider.COL_ONLINE, 1);
