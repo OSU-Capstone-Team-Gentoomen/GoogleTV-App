@@ -11,7 +11,7 @@ import android.util.Log;
 public class DummyProvider extends ContentProvider {
 
 	private static final String LOG_TAG = "DummyProvider";
-	
+
 	private static final int DEVICES = 1;
 	private static final int DEVICE_ONE = 2;
 	private static final int DEVICE_TWO = 3;
@@ -19,7 +19,7 @@ public class DummyProvider extends ContentProvider {
 	private static final int DEVICE_ONE_B = 5;
 	private static final int DEVICE_DELAYED = 6;
 	private static final int DEVICE_DELAYED_DIR = 7;
-	
+
 	public static final int FILE_TYPE = 1;
 	public static final int DIR_TYPE = 2;
 
@@ -48,25 +48,16 @@ public class DummyProvider extends ContentProvider {
 			"path",
 			"type",
 		};
-		
+
 		MatrixCursor c = new MatrixCursor(cols);
 
 		Log.d(LOG_TAG, uri.toString());
 		Log.d(LOG_TAG, Integer.toString(sUriMatcher.match(uri)));
+
+		
 		
 		switch (sUriMatcher.match(uri)) {
-			case DEVICES:
-				c.newRow().add(1).add("one").add("one");
-				c.newRow().add(2).add("two").add("two");
-				c.newRow().add(3).add("looooooooooonooog one").add("one");
-				c.newRow().add(4).add("Delayed").add("delayed");
-				c.newRow().add(5).add("many").add("two");
-				c.newRow().add(6).add("many").add("two");
-				c.newRow().add(7).add("many").add("two");
-				c.newRow().add(8).add("many").add("two");
-				c.newRow().add(9).add("many").add("two");
-				c.newRow().add(10).add("many").add("two");
-				break;
+		
 			case DEVICE_ONE:
 				c.newRow().add(1).add("dir one").add("one/dir one").add(DIR_TYPE);
 				c.newRow().add(2).add("dir two").add("one/dir two").add(DIR_TYPE);
@@ -103,12 +94,12 @@ public class DummyProvider extends ContentProvider {
 				break;
 			default:
 		}
-		
+
 		return c;
 	}
-	
+
 	// TODO throwing exceptions for unimplemented methods would be nice
-	
+
 	@Override
 	public int delete(Uri arg0, String arg1, String[] arg2) {
 		// TODO Auto-generated method stub
