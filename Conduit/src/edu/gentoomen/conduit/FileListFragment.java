@@ -1,5 +1,10 @@
 package edu.gentoomen.conduit;
 
+import java.io.IOException;
+
+import edu.gentoomen.conduit.networking.DeviceNavigator;
+import edu.gentoomen.conduit.networking.HttpStreamServer;
+import edu.gentoomen.conduit.networking.StreamProxy;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
@@ -20,6 +25,7 @@ public class FileListFragment extends ListFragment
 	
 	public static final int TYPE_FOLDER = 0;
 	public static final int TYPE_FILE = 1;
+	protected static HttpStreamServer server;
 	
 	private static final String LOG_TAG = "FileListFragment";
 	SimpleCursorAdapter mAdapter;
@@ -37,8 +43,7 @@ public class FileListFragment extends ListFragment
         @Override
         public void onPathChanged(String path) {}
     };
-    
-	//Uri baseUri = Uri.parse("content://edu.gentoomen.conduit.dummyprovider");
+    	
     Uri baseUri = MediaContentProvider.MEDIA_URI;
 	String currentPath = "0";
 	int selectedType = -1;
@@ -105,10 +110,18 @@ public class FileListFragment extends ListFragment
 		super.onListItemClick(listView, view, position, id);
         
         Cursor i = (Cursor) listView.getItemAtPosition(position);
-        
+        String fileName = i.getString(2);
         /*Need to get rid of magic numbers*/
         switch (i.getInt(3)) {
         case MediaContentProvider.MEDIA:
+        	
+        	Log.d(LOG_TAG, "clicked on " + fileName);
+        	try {
+        		server = new HttpStreamServer(DeviceNavigator.path + fileName, HttpStreamServer.getMimeType(fileName));
+			} catch (IOException e) {				
+				e.printStackTrace();
+			}
+        	
         	mCallbacks.onFileSelected(i.getString(2));
         	break;
         case MediaContentProvider.FOLDER:

@@ -42,6 +42,7 @@ public class NetworkContentProvider extends ContentProvider {
 	public static final String  COL_IP_ADDRESS = "ipAddress";
 	public static final String  COL_SAMBA = "hasSamba";
 	public static final String  COL_ONLINE = "isOnline";
+	public static final String  COL_NBTADR = "nbtAdr";
 	
 	//Column Indexes
 	public static final int IPADDR_COLUMN = 1;
@@ -77,7 +78,8 @@ public class NetworkContentProvider extends ContentProvider {
 				+ ID             + " integer, "
 				+ COL_IP_ADDRESS + " text primary key,"
 				+ COL_ONLINE     + " integer not null, " 
-				+ COL_SAMBA      + " integer not null);"; 
+				+ COL_SAMBA      + " integer not null, "
+				+ COL_NBTADR 	 + " text);"; 
 		
 		public DeviceHostDatabaseHelper(Context context, String name, 
 										CursorFactory factory, int version) {

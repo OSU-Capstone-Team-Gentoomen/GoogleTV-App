@@ -1,8 +1,12 @@
 package edu.gentoomen.conduit;
 
+import java.io.IOException;
+
 import com.example.google.tv.leftnavbar.LeftNavBar;
 
+import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
+import edu.gentoomen.conduit.networking.HttpStreamServer;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
@@ -14,6 +18,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager.OnActivityStopListener;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -101,7 +106,7 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+                
         DiscoveryAgent discoveryAgent = new DiscoveryAgent(this);
         discoveryAgent.execute("");
         setContentView(R.layout.browser_activity);
@@ -145,8 +150,15 @@ public class BrowserActivity extends FragmentActivity
     
     @Override
     public void onFileSelected(String id) {
+    	String toPlay = DeviceNavigator.path + id;
+    	//Bundle mediaPath = new Bundle();
+    	//mediaPath.putString("mediaPath", toPlay);
+    	
     	Intent detailIntent = new Intent(this, PlayerActivity.class);
+    	detailIntent.putExtra("mediaPath", toPlay);
+    	//detailIntent.putExtras(mediaPath);
         startActivity(detailIntent);
+        
     }
 
     @Override

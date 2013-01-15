@@ -86,7 +86,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 			getIpRange();
 			findAvailHosts();
 			sAgent = new SambaDiscoveryAgent(hosts);				
-		}
+		}			
 		
 		return "";
 	}

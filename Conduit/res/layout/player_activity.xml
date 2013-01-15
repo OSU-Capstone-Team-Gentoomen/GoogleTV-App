@@ -8,5 +8,13 @@
 	    android:id="@+id/myvideoview"
 	    android:layout_width="wrap_content"
 	    android:layout_height="wrap_content" >
-	</VideoView>    
+	</VideoView>
+	
+	<!--<SurfaceView
+	    android:id="@+id/surface"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_gravity="center"
+	</SurfaceView>-->
+		    
 </FrameLayout>

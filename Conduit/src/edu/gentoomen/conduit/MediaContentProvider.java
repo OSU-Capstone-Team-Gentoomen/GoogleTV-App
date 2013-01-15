@@ -1,8 +1,12 @@
 package edu.gentoomen.conduit;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
+import edu.gentoomen.conduit.networking.HttpStreamServer;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -81,27 +85,42 @@ public class MediaContentProvider extends ContentProvider {
 	}
 
 	@Override
-	public Cursor query(Uri uri, String[] projection, String path,
+	/*
+	 * fileName can also be a folder, if so it's only a folder name and not an absolute or relative path
+	 */
+	public Cursor query(Uri uri, String[] projection, String fileName,
 			String[] selectionArgs, String sortOrder) {
 		
 		MatrixCursor curse = new MatrixCursor(availableColumns);
 		Log.d(TAG, "Querying for files, uri given: " + uri);
-		Log.d(TAG, "Selected path " + path);
+		Log.d(TAG, "Selected path " + fileName);
 		
 		switch (mUriMatcher.match(uri)) {
 		case MEDIA:
 			Log.d(TAG, "Media file type selected");
 			break;
+			
 		case FOLDER:
-			Log.d(TAG, "folder type selected, doing LS of" + path);
+			Log.d(TAG, "folder type selected, doing LS of " + fileName);
 			int counter = 1;
-			for (SmbFile f : DeviceNavigator.deviceCD(path)) {
+
+			try {
+				if(!(new SmbFile("smb://" + DeviceNavigator.path + fileName).getParent().toString().equalsIgnoreCase("smb://"))) {
+					curse.newRow().add(counter).add(DeviceNavigator.getParentPath(fileName)).add("..").add(FOLDER);
+					counter++;
+				}
+			} catch (MalformedURLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			for (SmbFile f : DeviceNavigator.deviceCD(fileName)) {
 				try {
 					if (f.isDirectory()) 
 						curse.newRow().add(counter).add(f.getPath()).add(f.getName().substring(0, f.getName().length() - 1)).add(FOLDER);
 					else 
 						curse.newRow().add(counter).add(f.getPath()).add(f.getName()).add(MEDIA);
-					counter++;
+					counter++;					
 				} catch (SmbException e) {
 					Log.d(TAG, "SmbException: " + e.getMessage());
 				}

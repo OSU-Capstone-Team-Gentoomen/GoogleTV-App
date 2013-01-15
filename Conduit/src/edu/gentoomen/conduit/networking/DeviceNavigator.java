@@ -1,12 +1,18 @@
 package edu.gentoomen.conduit.networking;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 
+import android.net.Uri;
 import android.util.Log;
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFileInputStream;
+import jcifs.smb.SmbRandomAccessFile;
 
 public class DeviceNavigator {
 	
@@ -18,7 +24,7 @@ public class DeviceNavigator {
 	private static final String TAG = "DevNav";
 	
 	private static String device = null;
-	private static String path = "";
+	public static String path = "";
 	
 	public DeviceNavigator(String dev) {
 		this.device = dev;		
@@ -43,7 +49,34 @@ public class DeviceNavigator {
 		
 	}
 	
+	public static InputStream smbToInputStream(SmbFile file) {
+		try {			
+			return file.getInputStream();			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			Log.d(TAG, "can't get input stream: " + e.getMessage());
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	public static String getPath() { return path; }
+	
+	//TODO: add bounds checking so this stops trying to go up 
+	//a directory when it's at the root directory of the share
+	//TODO: ".." is a valid Windows file name
+	public static String getParentPath(String path) {
+		
+		/*
+		 * remove last /, get index of previous /, lob that off, add new slash
+		 */
+		
+		if(path == null || path.lastIndexOf('/') < 0) { return path; }
+		
+		return path.substring(0,
+				path.substring(0, path.length() - 2).lastIndexOf("/")) + "/";
+		
+	}
 	
 	/*
 	 * note: UI restricts the user to only going up one directory at a time
@@ -52,17 +85,17 @@ public class DeviceNavigator {
 	public static LinkedList<SmbFile> deviceCD(String folder) {
 		
 		if(folder.equalsIgnoreCase("..")) {
-			/*
-			 * remove last /, get index of previous /, lob that off, add new slash
-			 */
-			path = path.substring(0,
-						path.substring(0, path.length() - 2).lastIndexOf("/")) + "/";			
+			path = getParentPath(path);			
 		}
 		else {
-			Log.d(TAG, "path before append" + path);
+			String prevPath = path;
+			Log.d(TAG, "path before append " + path);			
 			path = path + folder + "/";
 			path.trim();
-			Log.d(TAG, "path after append" + path);
+			Log.d(TAG, "path after append " + path);
+			if (prevPath != null && prevPath.isEmpty() == false)
+				Log.d(TAG, "parent folder " + path.substring(0,
+						path.substring(0, path.length() - 2).lastIndexOf("/")) + "/");
 		}
 		
 		return deviceLS();
