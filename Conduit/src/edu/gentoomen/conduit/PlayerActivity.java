@@ -17,13 +17,13 @@ public class PlayerActivity extends Activity {
 	    super.onCreate(savedInstanceState);
 	    
 	    Log.d(TAG, "in player activity class");
-	    //String mediaPath = savedInstanceState.getString("mediaPath");
-	    //Log.d(TAG, "media path is " + mediaPath);
 	    Uri uri = Uri.parse(SrcPath);
+	    
 	    if(uri == null) {
 	    	Log.d(TAG, "url null, returning");
 	    	return;
 	    }
+	    
 	    Log.d(TAG, "valid URI " + uri);
 	    	    
 	    setContentView(R.layout.player_activity);

@@ -1,12 +1,11 @@
 package edu.gentoomen.conduit;
 
-import java.io.IOException;
+import java.util.ArrayList;
 
 import com.example.google.tv.leftnavbar.LeftNavBar;
-
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
-import edu.gentoomen.conduit.networking.HttpStreamServer;
+import edu.gentoomen.utilities.Utils;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
@@ -16,13 +15,10 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager.OnActivityStopListener;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.util.Log;
@@ -32,6 +28,14 @@ public class BrowserActivity extends FragmentActivity
 
 	public static final String LOG_TAG = "MainActivity";
 	private LeftNavBar mLeftNavBar;
+	//List of image formats that the app supports. 
+	public static final ArrayList<String> supportedImageFormats = new ArrayList();
+	static {
+		supportedImageFormats.add(".gif");
+		supportedImageFormats.add(".png");
+		supportedImageFormats.add(".jpg");
+		supportedImageFormats.add(".jpeg");
+	}
 	
     // These are the rows that we will retrieve.
     static final String[] SUMMARY_PROJECTION = new String[] {
@@ -153,8 +157,16 @@ public class BrowserActivity extends FragmentActivity
     	String toPlay = DeviceNavigator.path + id;
     	//Bundle mediaPath = new Bundle();
     	//mediaPath.putString("mediaPath", toPlay);
+    	String fileType = Utils.getExtension(id);
+    	Intent detailIntent;
+    	Log.d(LOG_TAG, fileType);
+    	if (supportedImageFormats.contains(fileType)) {
+    		detailIntent = new Intent(this, ImageActivity.class);
+    	} else {
+    		detailIntent = new Intent(this, PlayerActivity.class);
+    	}
     	
-    	Intent detailIntent = new Intent(this, PlayerActivity.class);
+    	
     	detailIntent.putExtra("mediaPath", toPlay);
     	//detailIntent.putExtras(mediaPath);
         startActivity(detailIntent);

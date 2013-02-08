@@ -83,6 +83,26 @@ public class MediaContentProvider extends ContentProvider {
 	public boolean onCreate() {			
 		return true;
 	}
+	
+	public static boolean isRoot() {
+		try {
+			return !(new SmbFile("smb://" + DeviceNavigator.path).getParent().toString().equalsIgnoreCase("smb://"));
+		} catch (MalformedURLException e) {
+			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.path);
+		}
+		
+		return false;
+	}
+	
+	public static boolean isRoot(String fileName) {
+		try {
+			return !(new SmbFile("smb://" + DeviceNavigator.path + fileName).getParent().toString().equalsIgnoreCase("smb://"));
+		} catch (MalformedURLException e) {
+			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.path);
+		}
+		
+		return false;
+	}
 
 	@Override
 	/*
@@ -104,16 +124,14 @@ public class MediaContentProvider extends ContentProvider {
 			Log.d(TAG, "folder type selected, doing LS of " + fileName);
 			int counter = 1;
 
-			try {
-				if(!(new SmbFile("smb://" + DeviceNavigator.path + fileName).getParent().toString().equalsIgnoreCase("smb://"))) {
-					curse.newRow().add(counter).add(DeviceNavigator.getParentPath(fileName)).add("..").add(FOLDER);
-					counter++;
-				}
-			} catch (MalformedURLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			//see if this folder is the parent folder
+			if (isRoot(fileName)) {
+				//add a .. folder to go back, will be moved to the front end later
+					
+				curse.newRow().add(counter).add(DeviceNavigator.getParentPath(fileName)).add("..").add(FOLDER);
+				counter++;
 			}
-			
+
 			for (SmbFile f : DeviceNavigator.deviceCD(fileName)) {
 				try {
 					if (f.isDirectory()) 

@@ -84,11 +84,11 @@ public class DeviceNavigator {
 	 */
 	public static LinkedList<SmbFile> deviceCD(String folder) {
 		
+		String prevPath = path;
 		if(folder.equalsIgnoreCase("..")) {
 			path = getParentPath(path);			
 		}
 		else {
-			String prevPath = path;
 			Log.d(TAG, "path before append " + path);			
 			path = path + folder + "/";
 			path.trim();
@@ -98,7 +98,14 @@ public class DeviceNavigator {
 						path.substring(0, path.length() - 2).lastIndexOf("/")) + "/");
 		}
 		
-		return deviceLS();
+		LinkedList<SmbFile> ls = deviceLS();
+		if(ls == null) {
+			path = prevPath;
+			return deviceLS();
+		}
+		else {
+			return ls;
+		}
 		
 	}
 	

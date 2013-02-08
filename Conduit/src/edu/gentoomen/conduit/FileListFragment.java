@@ -1,10 +1,8 @@
 package edu.gentoomen.conduit;
 
 import java.io.IOException;
-
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.HttpStreamServer;
-import edu.gentoomen.conduit.networking.StreamProxy;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
