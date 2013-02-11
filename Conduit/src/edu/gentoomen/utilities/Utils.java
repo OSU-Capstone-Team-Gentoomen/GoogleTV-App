@@ -1,7 +1,11 @@
 package edu.gentoomen.utilities;
 
+import java.net.MalformedURLException;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
+
+import jcifs.smb.SmbFile;
+import edu.gentoomen.conduit.networking.DeviceNavigator;
 
 import android.util.Log;
 
@@ -46,6 +50,19 @@ public class Utils {
 		String extension;
 		int extensionStart = fileName.lastIndexOf('.');
 		return fileName.substring(extensionStart);
+	}
+	
+	public static boolean isRoot(String filePath) {
+		
+		try {
+			return (new SmbFile("smb://" + filePath).getParent().toString().equalsIgnoreCase("smb://"));
+		} catch (MalformedURLException e) {
+			Log.d(TAG, "MalformedURLException caught on checking for root on path " + filePath);			
+		}
+		
+		Log.d(TAG, "isRoot: Return value false");
+		return false;
+		
 	}
 	
 }

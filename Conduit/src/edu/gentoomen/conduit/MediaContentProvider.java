@@ -91,9 +91,9 @@ public class MediaContentProvider extends ContentProvider {
 	public static boolean isRoot() {
 		
 		try {
-			return (new SmbFile("smb://" + DeviceNavigator.path).getParent().toString().equalsIgnoreCase("smb://"));
+			return (new SmbFile("smb://" + DeviceNavigator.getPath()).getParent().toString().equalsIgnoreCase("smb://"));
 		} catch (MalformedURLException e) {
-			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.path);
+			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.getPath());
 		}
 		
 		return false;
@@ -104,12 +104,12 @@ public class MediaContentProvider extends ContentProvider {
 	 * Pass in a path to determine if the
 	 * path is the root or not
 	 */
-	public static boolean isRoot(String fileName) {
+	public static boolean isRoot(String filePath) {
 		
 		try {
-			return (new SmbFile("smb://" + DeviceNavigator.path + fileName).getParent().toString().equalsIgnoreCase("smb://"));
+			return (new SmbFile("smb://" + filePath).getParent().toString().equalsIgnoreCase("smb://"));
 		} catch (MalformedURLException e) {
-			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.path);			
+			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.getPath());			
 		}
 		
 		Log.d(TAG, "isRoot: Return value false");
@@ -138,10 +138,10 @@ public class MediaContentProvider extends ContentProvider {
 			int counter = 1;
 
 			LinkedList<SmbFile> listOfFiles = DeviceNavigator.deviceCD(filePath);
-			Log.d(TAG, "current path: " + DeviceNavigator.path);
+			Log.d(TAG, "current path: " + DeviceNavigator.getPath());
 			
 			if (!isRoot()) {				
-				//add a .. folder to go back, will be moved to the front end later				
+				/*add a .. folder to go back, will be moved to the front end later*/				
 				curse.newRow().add(counter).add(DeviceNavigator.getParentPath(filePath)).add("..").add(FOLDER);
 				counter++;
 			}

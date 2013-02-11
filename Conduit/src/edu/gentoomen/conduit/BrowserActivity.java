@@ -81,9 +81,14 @@ public class BrowserActivity extends FragmentActivity
     	
     	@Override
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
-        	Log.d(LOG_TAG, "tab selected " + tab.getTag());
-        	mFileList.setPath(tab.getTag().toString());
+        	Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
+        	
+        	/*Check to ensure that the tag passed in is a valid IP address*/
+        	if (!tab.getTag().toString().matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
+        		return;        	
+        	
         	mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
+        	mFileList.setDevice(tab.getTag().toString());        	
         	ActionBar bar = getLeftNavBar();
         	bar.setTitle(mTitle);
         }
@@ -156,7 +161,7 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public void onFileSelected(String id) {
     	
-    	String toPlay = DeviceNavigator.path + id;    	    
+    	String toPlay = DeviceNavigator.getPath() + id;    	    
     	String fileType = Utils.getExtension(id);
     	Intent detailIntent;
     	
@@ -176,7 +181,7 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public void onPathChanged(String path) {
     	ActionBar bar = getLeftNavBar();
-    	bar.setSubtitle("/" + path);
+    	bar.setSubtitle("/" + DeviceNavigator.getPath());
     }
     
     @Override

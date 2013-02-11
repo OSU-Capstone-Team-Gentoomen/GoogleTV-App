@@ -3,6 +3,7 @@ package edu.gentoomen.conduit;
 import java.io.IOException;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.HttpStreamServer;
+import edu.gentoomen.utilities.Utils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
@@ -23,27 +24,32 @@ public class FileListFragment extends ListFragment
 	
 	public static final int TYPE_FOLDER = 0;
 	public static final int TYPE_FILE = 1;
+	
+	private static final int FILE_NAME_INDEX = 2;
+	private static final int FILE_CONTENT_TYPE = 3;
+	
+	private String currentPath ="";
+	
 	protected static HttpStreamServer server;
 	
 	private static final String LOG_TAG = "FileListFragment";
 	SimpleCursorAdapter mAdapter;
 	
-    private Callbacks mCallbacks = sDummyCallbacks;
+    private Callbacks mCallbacks = browserCallback;
 
     public interface Callbacks {
         public void onFileSelected(String id);
         public void onPathChanged(String path);
     }
 
-    private static Callbacks sDummyCallbacks = new Callbacks() {
+    private static Callbacks browserCallback = new Callbacks() {
         @Override
         public void onFileSelected(String id) {}
         @Override
         public void onPathChanged(String path) {}
     };
     	
-    Uri baseUri = MediaContentProvider.MEDIA_URI;
-	String currentPath = "0";
+    Uri baseUri = MediaContentProvider.MEDIA_URI;    
 	int selectedType = -1;
 	
 	@Override
@@ -100,7 +106,7 @@ public class FileListFragment extends ListFragment
     @Override
     public void onDetach() {
         super.onDetach();
-        mCallbacks = sDummyCallbacks;
+        mCallbacks = browserCallback;
     }
 
 	@Override
@@ -108,22 +114,22 @@ public class FileListFragment extends ListFragment
 		super.onListItemClick(listView, view, position, id);
         
         Cursor i = (Cursor) listView.getItemAtPosition(position);
-        String fileName = i.getString(2);
-        /*Need to get rid of magic numbers*/
-        switch (i.getInt(3)) {
+        String fileName = i.getString(FILE_NAME_INDEX);
+        
+        switch (i.getInt(FILE_CONTENT_TYPE)) {
         case MediaContentProvider.MEDIA:
         	
         	Log.d(LOG_TAG, "clicked on " + fileName);
         	try {
-        		server = new HttpStreamServer(DeviceNavigator.path + fileName, HttpStreamServer.getMimeType(fileName));
+        		server = new HttpStreamServer(DeviceNavigator.getPath() + fileName, HttpStreamServer.getMimeType(fileName));
 			} catch (IOException e) {				
 				e.printStackTrace();
 			}
         	
-        	mCallbacks.onFileSelected(i.getString(2));
+        	mCallbacks.onFileSelected(i.getString(FILE_NAME_INDEX));
         	break;
         case MediaContentProvider.FOLDER:
-        	setPath(i.getString(2));
+        	setPath(i.getString(FILE_NAME_INDEX));
         	break;
         }
 	}
@@ -138,9 +144,12 @@ public class FileListFragment extends ListFragment
 
 
     public void setPath(String path) {
-    	currentPath = path;
+    	
+    	Log.d(LOG_TAG, "Setting path to " + path);
+    	currentPath = path;    	    	   
     	getLoaderManager().restartLoader(0, null, this);
     	mCallbacks.onPathChanged(path);
+    	
     }
     
     public void setSelectedType(int type) {
@@ -148,26 +157,20 @@ public class FileListFragment extends ListFragment
     }
     
     public boolean up() {
-    	int i = currentPath.lastIndexOf('/');
-    	if (i != -1) {
-    		String path = currentPath.substring(0, i);
-    		setPath(path);
-    		return true;
-    	} else {
-    		return false;
-    	}
+    	
+    	/*Don't go up past root*/
+    	if (Utils.isRoot(DeviceNavigator.getPath()))
+    		return false;    		
+    	    	
+    	setPath("..");
+    	return true;
+    	
     }
     
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
     	
     	Uri uri;
     	Log.d(LOG_TAG, "Selected type " + selectedType);
-    	
-//    	if (selectedType == TYPE_FOLDER) {
-//    		 uri = Uri.withAppendedPath(baseUri, "");
-//    	} else {
-//    		 uri = Uri.withAppendedPath(baseUri, "file");
-//    	}
     	
     	switch (selectedType) {
     	case TYPE_FOLDER:
@@ -180,6 +183,8 @@ public class FileListFragment extends ListFragment
     		uri = Uri.withAppendedPath(baseUri, "INVALID");
     		break;
     	}
+    	
+    	Log.d(LOG_TAG, "onCreate DeviceNavigator.Path: " + DeviceNavigator.getPath());
     	
     	setListShownNoAnimation(false);
         return new CursorLoader(getActivity(), uri,
@@ -199,5 +204,17 @@ public class FileListFragment extends ListFragment
         // above is about to be closed.  We need to make sure we are no
         // longer using it.
         mAdapter.swapCursor(null);
+    }
+    
+    /*
+     * Clear the DeviceNavigator path
+     * so we can switch between devices 
+     */    
+    public void setDevice(String device) {
+    	
+    	Log.d(LOG_TAG, "setting device to: " + device);
+    	DeviceNavigator.path = ""; 
+    	setPath(device);
+    	
     }
 }
