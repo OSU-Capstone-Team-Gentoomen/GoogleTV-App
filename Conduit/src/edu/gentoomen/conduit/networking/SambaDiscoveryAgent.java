@@ -1,8 +1,5 @@
 package edu.gentoomen.conduit.networking;
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
@@ -19,7 +16,6 @@ import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbFileFilter;
 import android.util.Log;
-import edu.gentoomen.conduit.NetworkContentProvider;
 import edu.gentoomen.utilities.Services;
 
 
@@ -34,6 +30,7 @@ public class SambaDiscoveryAgent {
 	
 	private static final String[] SYS_FOLDERS = { "C$", "H$", "IPC$", "ADMIN$" };
 	
+	@SuppressWarnings("unused")
 	private static NtlmPasswordAuthentication auth = 
 								NtlmPasswordAuthentication.ANONYMOUS;
 		
@@ -73,8 +70,7 @@ public class SambaDiscoveryAgent {
 	protected SambaDiscoveryAgent(HashSet<Pingable> hosts) {
 		
 		this.hosts = hosts;
-		this.initalSambaScan();
-		//this.backgroundSambaScan();
+		this.initalSambaScan();	
 		
 	}
 
@@ -88,7 +84,7 @@ public class SambaDiscoveryAgent {
 			Future<Boolean> result = backgroundScanThread.submit(new InitialScan(p.addr.getHostAddress()));			
 			try {
 				//if(NbtAddress.getByName(p.addr.getHostAddress()).isActive()) {
-				if (result.get(500, TimeUnit.MILLISECONDS)) {
+				if (result.get(1000, TimeUnit.MILLISECONDS)) {
 					Log.d(TAG, "Found Samba Share at " + p.addr.getHostAddress());					
 					DiscoveryAgent.addNewHost(p, Services.Samba);					
 				} else {
@@ -124,14 +120,6 @@ public class SambaDiscoveryAgent {
 		
 	}
 	
-	protected void shutdownBackgroundScan(){
-		backgroundScanThread.shutdown();
-	}
-		
-	private void backgroundSambaScan() {			
-		backgroundScanThread.submit(new BackgroundScan());		
-	}
-	
 	private class InitialScan implements Callable<Boolean> {
 
 		private String ipAddress;
@@ -148,26 +136,5 @@ public class SambaDiscoveryAgent {
 			return false;
 		}
 		
-	}
-	
-	/*Attempt to connect to a samba share with max timeout*/
-	private class BackgroundScan implements Runnable {
-		
-		public BackgroundScan(){
-		}
-		
-		public void run() {
-			Log.d("Will-Debug", "Starting samba ping on background scan");
-			for (Pingable p : hosts) {
-				try { 
-					new SmbFile("smb://" + p.addr.getHostAddress());
-					DiscoveryAgent.changeFlag(NetworkContentProvider.COL_SAMBA, 
-											  1, p.addr.getHostAddress());
-				} catch (Exception e) {
-					Log.d("Will-debug", "Background scan found no samba at " + 
-						  p.addr.getHostAddress());
-				}
-			}
-		}
 	}
 }

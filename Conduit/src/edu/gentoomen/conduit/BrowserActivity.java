@@ -105,10 +105,10 @@ public class BrowserActivity extends FragmentActivity
             }
         }
     }
-   
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
+    	
         super.onCreate(savedInstanceState);
                 
         DiscoveryAgent discoveryAgent = new DiscoveryAgent(this);
@@ -117,6 +117,7 @@ public class BrowserActivity extends FragmentActivity
         setupBar();
         
         getSupportLoaderManager().initLoader(0, null, this);
+        
     }
     
     private LeftNavBar getLeftNavBar() {
@@ -154,21 +155,20 @@ public class BrowserActivity extends FragmentActivity
     
     @Override
     public void onFileSelected(String id) {
-    	String toPlay = DeviceNavigator.path + id;
-    	//Bundle mediaPath = new Bundle();
-    	//mediaPath.putString("mediaPath", toPlay);
+    	
+    	String toPlay = DeviceNavigator.path + id;    	    
     	String fileType = Utils.getExtension(id);
     	Intent detailIntent;
+    	
     	Log.d(LOG_TAG, fileType);
+    	
     	if (supportedImageFormats.contains(fileType)) {
     		detailIntent = new Intent(this, ImageActivity.class);
     	} else {
     		detailIntent = new Intent(this, PlayerActivity.class);
     	}
-    	
-    	
-    	detailIntent.putExtra("mediaPath", toPlay);
-    	//detailIntent.putExtras(mediaPath);
+    	    	
+    	detailIntent.putExtra("mediaPath", toPlay);    	
         startActivity(detailIntent);
         
     }

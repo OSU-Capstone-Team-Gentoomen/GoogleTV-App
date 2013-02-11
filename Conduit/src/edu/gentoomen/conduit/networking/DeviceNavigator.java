@@ -1,18 +1,13 @@
 package edu.gentoomen.conduit.networking;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 
-import android.net.Uri;
-import android.util.Log;
-
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
-import jcifs.smb.SmbFileInputStream;
-import jcifs.smb.SmbRandomAccessFile;
+import android.util.Log;
 
 public class DeviceNavigator {
 	
@@ -22,20 +17,17 @@ public class DeviceNavigator {
 	 */
 	
 	private static final String TAG = "DevNav";
-	
-	private static String device = null;
+		
 	public static String path = "";
 	
-	public DeviceNavigator(String dev) {
-		this.device = dev;		
-	}
+	public DeviceNavigator(String dev) {}
 	
 	public static LinkedList<SmbFile> deviceLS() {
 		
 		Log.d(TAG, "Listing " + path);
 		LinkedList<SmbFile> files = new LinkedList<SmbFile>();
 		try {
-			for(SmbFile f : new SmbFile("smb://" + path).listFiles())
+			for (SmbFile f : new SmbFile("smb://" + path).listFiles())
 				files.add(f);
 		} catch (SmbException e) {
 			Log.d(TAG, "SmbException " + e.getMessage());
@@ -93,13 +85,14 @@ public class DeviceNavigator {
 			path = path + folder + "/";
 			path.trim();
 			Log.d(TAG, "path after append " + path);
-			if (prevPath != null && prevPath.isEmpty() == false)
+			if (prevPath != null && prevPath.isEmpty() == false) {
 				Log.d(TAG, "parent folder " + path.substring(0,
-						path.substring(0, path.length() - 2).lastIndexOf("/")) + "/");
+						path.substring(0, path.length() - 2).lastIndexOf("/")) + "/");			
+			}
 		}
 		
 		LinkedList<SmbFile> ls = deviceLS();
-		if(ls == null) {
+		if (ls == null) {
 			path = prevPath;
 			return deviceLS();
 		}
@@ -115,4 +108,5 @@ public class DeviceNavigator {
 		return deviceLS();
 		
 	}
+	
 }

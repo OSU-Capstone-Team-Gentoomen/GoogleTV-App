@@ -1,12 +1,11 @@
 package edu.gentoomen.conduit;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.LinkedList;
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
-import edu.gentoomen.conduit.networking.HttpStreamServer;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -84,36 +83,50 @@ public class MediaContentProvider extends ContentProvider {
 		return true;
 	}
 	
+	/*
+	 * Uses the current path in the device 
+	 * navigator to determine if we are in a root
+	 * directory
+	 */
 	public static boolean isRoot() {
+		
 		try {
-			return !(new SmbFile("smb://" + DeviceNavigator.path).getParent().toString().equalsIgnoreCase("smb://"));
+			return (new SmbFile("smb://" + DeviceNavigator.path).getParent().toString().equalsIgnoreCase("smb://"));
 		} catch (MalformedURLException e) {
 			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.path);
 		}
 		
 		return false;
+		
 	}
 	
+	/*
+	 * Pass in a path to determine if the
+	 * path is the root or not
+	 */
 	public static boolean isRoot(String fileName) {
+		
 		try {
-			return !(new SmbFile("smb://" + DeviceNavigator.path + fileName).getParent().toString().equalsIgnoreCase("smb://"));
+			return (new SmbFile("smb://" + DeviceNavigator.path + fileName).getParent().toString().equalsIgnoreCase("smb://"));
 		} catch (MalformedURLException e) {
-			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.path);
+			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.path);			
 		}
 		
+		Log.d(TAG, "isRoot: Return value false");
 		return false;
+		
 	}
 
 	@Override
 	/*
 	 * fileName can also be a folder, if so it's only a folder name and not an absolute or relative path
 	 */
-	public Cursor query(Uri uri, String[] projection, String fileName,
+	public Cursor query(Uri uri, String[] projection, String filePath,
 			String[] selectionArgs, String sortOrder) {
 		
 		MatrixCursor curse = new MatrixCursor(availableColumns);
 		Log.d(TAG, "Querying for files, uri given: " + uri);
-		Log.d(TAG, "Selected path " + fileName);
+		Log.d(TAG, "Selected path " + filePath);
 		
 		switch (mUriMatcher.match(uri)) {
 		case MEDIA:
@@ -121,18 +134,19 @@ public class MediaContentProvider extends ContentProvider {
 			break;
 			
 		case FOLDER:
-			Log.d(TAG, "folder type selected, doing LS of " + fileName);
+			Log.d(TAG, "folder type selected, doing LS of " + filePath);
 			int counter = 1;
 
-			//see if this folder is the parent folder
-			if (isRoot(fileName)) {
-				//add a .. folder to go back, will be moved to the front end later
-					
-				curse.newRow().add(counter).add(DeviceNavigator.getParentPath(fileName)).add("..").add(FOLDER);
+			LinkedList<SmbFile> listOfFiles = DeviceNavigator.deviceCD(filePath);
+			Log.d(TAG, "current path: " + DeviceNavigator.path);
+			
+			if (!isRoot()) {				
+				//add a .. folder to go back, will be moved to the front end later				
+				curse.newRow().add(counter).add(DeviceNavigator.getParentPath(filePath)).add("..").add(FOLDER);
 				counter++;
 			}
 
-			for (SmbFile f : DeviceNavigator.deviceCD(fileName)) {
+			for (SmbFile f : listOfFiles) {
 				try {
 					if (f.isDirectory()) 
 						curse.newRow().add(counter).add(f.getPath()).add(f.getName().substring(0, f.getName().length() - 1)).add(FOLDER);
@@ -151,7 +165,7 @@ public class MediaContentProvider extends ContentProvider {
 		
 		return curse;
 		
-	}
+	}	
 
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
