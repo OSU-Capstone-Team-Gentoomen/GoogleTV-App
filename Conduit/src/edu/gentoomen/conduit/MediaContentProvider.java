@@ -121,12 +121,12 @@ public class MediaContentProvider extends ContentProvider {
 	/*
 	 * fileName can also be a folder, if so it's only a folder name and not an absolute or relative path
 	 */
-	public Cursor query(Uri uri, String[] projection, String filePath,
+	public Cursor query(Uri uri, String[] projection, String fileName,
 			String[] selectionArgs, String sortOrder) {
 		
 		MatrixCursor curse = new MatrixCursor(availableColumns);
 		Log.d(TAG, "Querying for files, uri given: " + uri);
-		Log.d(TAG, "Selected path " + filePath);
+		Log.d(TAG, "Selected file " + fileName);
 		
 		switch (mUriMatcher.match(uri)) {
 		case MEDIA:
@@ -134,18 +134,21 @@ public class MediaContentProvider extends ContentProvider {
 			break;
 			
 		case FOLDER:
-			Log.d(TAG, "folder type selected, doing LS of " + filePath);
+			Log.d(TAG, "folder type selected, doing LS of " + fileName);
 			int counter = 1;
 
-			LinkedList<SmbFile> listOfFiles = DeviceNavigator.deviceCD(filePath);
+			LinkedList<SmbFile> listOfFiles = DeviceNavigator.deviceCD(fileName);
 			Log.d(TAG, "current path: " + DeviceNavigator.getPath());
 			
 			if (!isRoot()) {				
 				/*add a .. folder to go back, will be moved to the front end later*/				
-				curse.newRow().add(counter).add(DeviceNavigator.getParentPath(filePath)).add("..").add(FOLDER);
+				curse.newRow().add(counter).add(DeviceNavigator.getParentPath(fileName)).add("..").add(FOLDER);
 				counter++;
 			}
 
+			if (listOfFiles == null)
+				return null;
+			
 			for (SmbFile f : listOfFiles) {
 				try {
 					if (f.isDirectory()) 

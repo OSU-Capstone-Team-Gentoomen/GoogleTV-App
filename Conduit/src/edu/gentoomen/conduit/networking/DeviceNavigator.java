@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 
+import edu.gentoomen.utilities.Utils;
+
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.util.Log;
@@ -87,7 +89,7 @@ public class DeviceNavigator {
 		}
 
 		LinkedList<SmbFile> ls = deviceLS();
-		if (ls == null) {
+		if (ls == null && !Utils.isRoot(path)) {
 			path = prevPath;
 			return deviceLS();
 		}

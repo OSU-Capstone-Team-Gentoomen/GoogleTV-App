@@ -28,7 +28,7 @@ public class FileListFragment extends ListFragment
 	private static final int FILE_NAME_INDEX = 2;
 	private static final int FILE_CONTENT_TYPE = 3;
 	
-	private String currentPath ="";
+	private String selectedFile ="";
 	
 	protected static HttpStreamServer server;
 	
@@ -143,12 +143,12 @@ public class FileListFragment extends ListFragment
     };
 
 
-    public void setPath(String path) {
+    public void setPath(String fileSelected) {
     	
-    	Log.d(LOG_TAG, "Setting path to " + path);
-    	currentPath = path;    	    	   
+    	Log.d(LOG_TAG, "Setting path to " + fileSelected);
+    	selectedFile = fileSelected;    	    	   
     	getLoaderManager().restartLoader(0, null, this);
-    	mCallbacks.onPathChanged(path);
+    	mCallbacks.onPathChanged(fileSelected);
     	
     }
     
@@ -188,7 +188,7 @@ public class FileListFragment extends ListFragment
     	
     	setListShownNoAnimation(false);
         return new CursorLoader(getActivity(), uri,
-                SUMMARY_PROJECTION, currentPath, null, "");
+                SUMMARY_PROJECTION, selectedFile, null, "");
     }
 
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
