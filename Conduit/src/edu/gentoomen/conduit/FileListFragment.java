@@ -86,9 +86,7 @@ public class FileListFragment extends ListFragment
     	});
         
         setListAdapter(mAdapter);
-
-        getLoaderManager().initLoader(0, null, this);
-        
+        getLoaderManager().initLoader(0, null, this);        
         getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         getListView().setItemsCanFocus(true);
     }
@@ -132,6 +130,7 @@ public class FileListFragment extends ListFragment
         	setPath(i.getString(FILE_NAME_INDEX));
         	break;
         }
+              
 	}
 
     // These are the rows that we will retrieve.
@@ -148,7 +147,8 @@ public class FileListFragment extends ListFragment
     	Log.d(LOG_TAG, "Setting path to " + fileSelected);
     	selectedFile = fileSelected;    	    	   
     	getLoaderManager().restartLoader(0, null, this);
-    	mCallbacks.onPathChanged(fileSelected);
+    	Log.d(LOG_TAG, "Current path: " + DeviceNavigator.getPath());
+    	mCallbacks.onPathChanged(DeviceNavigator.getPath());
     	
     }
     
@@ -213,7 +213,7 @@ public class FileListFragment extends ListFragment
     public void setDevice(String device) {
     	
     	Log.d(LOG_TAG, "setting device to: " + device);
-    	DeviceNavigator.path = ""; 
+    	DeviceNavigator.setPath("");
     	setPath(device);
     	
     }

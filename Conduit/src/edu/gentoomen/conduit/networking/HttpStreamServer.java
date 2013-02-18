@@ -34,14 +34,14 @@ public class HttpStreamServer{
 	private static final String HTTP_OK = "200 OK";
 	private static final String HTTP_PARTIAL = "206 Partial Content";
 	private static final String HTTP_CLRF = "\r\n";
-	
+
 	private static final int    HTTP_PORT = 8888;
-	
+
 	private final SmbFile      file;	
 	private final String       fileMimeType;
 	private final ServerSocket serverSocket;
 	private Thread             listenThread;
-	
+
 	private static Hashtable<String, String> theMimeTypes = new Hashtable<String, String>();
 	static {
 		StringTokenizer st = new StringTokenizer(					
@@ -67,12 +67,12 @@ public class HttpStreamServer{
 
 
 	public HttpStreamServer(String path, String mimeType) throws IOException{
-		
+
 		Log.d(TAG, "starting StreamOverHttp init");
 		file = new SmbFile("smb://" + path);		
 		fileMimeType = mimeType;
 		serverSocket = new ServerSocket(HTTP_PORT);
-		
+
 		listenThread = new Thread(new Runnable(){
 			@Override
 			public void run(){
@@ -89,15 +89,15 @@ public class HttpStreamServer{
 			}
 
 		});
-		
+
 		listenThread.setName("Stream over HTTP");
 		listenThread.setDaemon(true);
 		listenThread.start();
-		
+
 	}
 
 	private class HttpSession implements Runnable {
-		
+
 		private SmbFileInputStream smbFileInputStream;
 		private final Socket clientSocket;
 		private byte[] buf;
@@ -136,35 +136,35 @@ public class HttpStreamServer{
 		}     
 
 		private Properties readHeader(InputStream clientStream) throws InterruptedException, IOException {
-			
+
 			int retLen = clientStream.read(buf, 0, buf.length);
-			
+
 			if (retLen <= 0)
 				return null;
-			
+
 			ByteArrayInputStream hbis = new ByteArrayInputStream(buf, 0, retLen);
 			BufferedReader hin = new BufferedReader(new InputStreamReader(hbis));
 			Properties clientHeaders = new Properties();
-			
+
 			if(!decodeHeader(hin, clientHeaders))
 				return null;
 
 			return clientHeaders;
 		}
-		
+
 		private ReturnHeader constructReturnHeader(Properties clientHeader) throws InterruptedException, IOException {
-								
+
 			String range = clientHeader.getProperty("range");
 			Properties responseHeader = new Properties();
-			
+
 			if(file.length()!=-1)
 				responseHeader.put("Content-Length", String.valueOf(file.length()));
-			
+
 			responseHeader.put("Accept-Ranges", "bytes");
 
 			long sendCount;
 			String status;
-			
+
 			if (range == null) {
 				status = HTTP_OK;
 				sendCount = (int)file.length();
@@ -173,7 +173,7 @@ public class HttpStreamServer{
 					sendError(HTTP_416, null);
 					return null;
 				}
-				
+
 				Log.d(TAG, "Range: " + range);
 				range = range.substring(6);
 				long startFrom = 0;
@@ -208,10 +208,10 @@ public class HttpStreamServer{
 				String rangeSpec = "bytes " + startFrom + "-" + endAt + "/" + file.length();
 				responseHeader.put("Content-Range", rangeSpec);
 			}
-			
+
 			ReturnHeader headerResponse = new ReturnHeader(responseHeader, sendCount, status);
 			return headerResponse;
-			
+
 		}
 
 		/*
@@ -233,12 +233,12 @@ public class HttpStreamServer{
 					return;
 
 				ReturnHeader response = constructReturnHeader(clientHeader);
-				
+
 				if (response == null) {
 					inS.close();
 					return;
 				}
-				
+
 				sendResponse(response.status, fileMimeType, response.returnHeader, smbFileInputStream, response.sendCount, null);
 				inS.close();
 				Log.d(TAG, "stream finished");
@@ -256,22 +256,22 @@ public class HttpStreamServer{
 		}
 
 		private boolean decodeHeader(BufferedReader in, Properties clientHeader) throws InterruptedException{
-			
+
 			try {
 				/*Read in the line*/
 				String inLine = in.readLine();
-				
+
 				if (inLine == null)
 					return false;
-				
+
 				StringTokenizer st = new StringTokenizer(inLine);
-				
+
 				/*Sanity check, make sure we've got a header*/
 				if (!st.hasMoreTokens())
 					sendError(HTTP_BAD_REQUEST, "Syntax error");
 
 				String method = st.nextToken();
-				
+
 				/*We only support GET methods*/
 				if (!method.equals("GET"))
 					return false;
@@ -282,15 +282,15 @@ public class HttpStreamServer{
 				/*Now read the rest of the header*/
 				while (true) {
 					String line = in.readLine();
-					
+
 					if (line==null)
 						break;
 
 					int colon = line.indexOf(':');
-					
+
 					if (colon < 0)
 						continue;
-					
+
 					/*Put our header into the properties object*/
 					String atr = line.substring(0, colon).trim().toLowerCase();
 					String val = line.substring(colon + 1).trim();
@@ -300,7 +300,7 @@ public class HttpStreamServer{
 				sendError(HTTP_INTERNAL_ERROR, "SERVER INTERNAL ERROR: IOException: " + ioe.getMessage());
 			}
 			return true;
-			
+
 		}
 
 		/*Send a response along with binary data to the client, then close the socket*/
@@ -309,7 +309,7 @@ public class HttpStreamServer{
 			try {
 				OutputStream out = clientSocket.getOutputStream();
 				PrintWriter writer = new PrintWriter(out);
-				
+
 				/*Write out our header to the client stream*/
 				if (status != null) {
 					String retLine = "HTTP/1.0 " + status + HTTP_CLRF;
@@ -320,7 +320,7 @@ public class HttpStreamServer{
 					String mimeT = "Content-Type: " + mimeType + HTTP_CLRF;
 					writer.print(mimeT);
 				}
-				
+
 				if (header != null) {
 					Enumeration<?> e = header.keys();
 					while (e.hasMoreElements()) {
@@ -332,7 +332,7 @@ public class HttpStreamServer{
 				}
 				writer.print(HTTP_CLRF);
 				writer.flush();
-				
+
 				/*Now write the binary data*/
 				if (smbInput != null)
 					copyStream(smbInput, out, buf, sendCount);
@@ -354,10 +354,10 @@ public class HttpStreamServer{
 
 		/*Send an HTTP error response*/
 		private void sendError(String status, String msg) throws InterruptedException{
-			
+
 			sendResponse(status, "text/plain", null, null, 0, msg);
 			throw new InterruptedException();
-			
+
 		}
 
 		/*Do a byte copy to our output stream to the client*/
@@ -371,35 +371,34 @@ public class HttpStreamServer{
 				out.write(tmpBuf, 0, count);
 				maxSize -= count;				
 			}
-			
+
 		}
-		
+
 		/*Simple container class*/
 		private class ReturnHeader {
-			
+
 			Properties returnHeader = null;
 			long sendCount = -1;
 			String status = null;
-			
+
 			public ReturnHeader(Properties header, long count, String stat) {
-				
+
 				returnHeader = header;
 				sendCount = count;
 				status = stat;
-				
+
 			}
 		}
 	}
 
 	public void close(){
 		
-		try {
-			serverSocket.close();
-			listenThread.join();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
+			try {		
+				listenThread.interrupt();			
+				serverSocket.close();	
+			} catch (IOException e) {				
+				e.printStackTrace();
+			}
 	}
 
 	public static String getMimeType(String fileName) {

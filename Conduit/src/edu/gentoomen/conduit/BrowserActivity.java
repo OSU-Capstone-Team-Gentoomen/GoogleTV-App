@@ -29,12 +29,20 @@ public class BrowserActivity extends FragmentActivity
 	public static final String LOG_TAG = "MainActivity";
 	private LeftNavBar mLeftNavBar;
 	//List of image formats that the app supports. 
-	public static final ArrayList<String> supportedImageFormats = new ArrayList();
+	public static final ArrayList<String> supportedImageFormats = new ArrayList<String>();
 	static {
 		supportedImageFormats.add(".gif");
 		supportedImageFormats.add(".png");
 		supportedImageFormats.add(".jpg");
 		supportedImageFormats.add(".jpeg");
+	}
+	
+	public static final ArrayList<String> supportedMusicFormats = new ArrayList<String>();
+	static {
+		supportedMusicFormats.add(".mp3");
+		supportedMusicFormats.add(".ogg");
+		supportedMusicFormats.add(".flac");
+		supportedMusicFormats.add(".wav");
 	}
 	
     // These are the rows that we will retrieve.
@@ -68,13 +76,11 @@ public class BrowserActivity extends FragmentActivity
     public void onLoaderReset(Loader<Cursor> loader) {}
 	
     private class TabListener implements ActionBar.TabListener {
-    
-    	private String mPath;
+        	
     	private String mTitle;
     	private FileListFragment mFileList;
     	
-    	public TabListener(FileListFragment fileList, String title, String path) {
-    		mPath = path;
+    	public TabListener(FileListFragment fileList, String title, String path) {    		
     		mTitle = title;
     		mFileList = fileList;
     	}
@@ -109,6 +115,7 @@ public class BrowserActivity extends FragmentActivity
             	finish();
             }
         }
+                
     }
     
     @Override
@@ -168,7 +175,7 @@ public class BrowserActivity extends FragmentActivity
     	Log.d(LOG_TAG, fileType);
     	
     	if (supportedImageFormats.contains(fileType)) {
-    		detailIntent = new Intent(this, ImageActivity.class);
+    		detailIntent = new Intent(this, PlayerActivity.class);
     	} else {
     		detailIntent = new Intent(this, PlayerActivity.class);
     	}
@@ -181,7 +188,7 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public void onPathChanged(String path) {
     	ActionBar bar = getLeftNavBar();
-    	bar.setSubtitle("/" + DeviceNavigator.getPath());
+    	bar.setSubtitle(path);
     }
     
     @Override

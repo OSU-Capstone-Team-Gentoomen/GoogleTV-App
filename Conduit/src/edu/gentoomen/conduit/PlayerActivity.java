@@ -31,13 +31,13 @@ public class PlayerActivity extends Activity {
 	    myVideoView.setVideoURI(uri);
 	    myVideoView.setMediaController(new MediaController(this));
 	    myVideoView.requestFocus();
-	    myVideoView.start();
+	    myVideoView.start();	    
 	    
 	}
 	
 	@Override
 	public void onDestroy() {
-		super.onDestroy();
+		super.onDestroy();		
 		FileListFragment.server.close();
 	}
 }

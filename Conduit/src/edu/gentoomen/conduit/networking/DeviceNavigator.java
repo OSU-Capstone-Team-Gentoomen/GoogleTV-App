@@ -20,7 +20,7 @@ public class DeviceNavigator {
 
 	private static final String TAG = "DevNav";
 
-	public static String path = "";
+	private static String path = "";
 
 	public DeviceNavigator(String dev) {}
 
@@ -53,9 +53,7 @@ public class DeviceNavigator {
 			return null;
 		}
 	}
-
-	public static String getPath() { return path; }
-
+	
 	//TODO: add bounds checking so this stops trying to go up 
 	//a directory when it's at the root directory of the share
 	//TODO: ".." is a valid Windows file name
@@ -105,5 +103,10 @@ public class DeviceNavigator {
 		return deviceLS();
 
 	}
+	
+	public static String getPath() { return path; }
+	
+	public static void setPath(String newPath) { path = newPath; } 
+
 
 }
