@@ -175,12 +175,12 @@ public class BrowserActivity extends FragmentActivity
     	Log.d(LOG_TAG, fileType);
     	
     	if (supportedImageFormats.contains(fileType)) {
-    		detailIntent = new Intent(this, PlayerActivity.class);
+    		detailIntent = new Intent(this, ImageActivity.class);
     	} else {
     		detailIntent = new Intent(this, PlayerActivity.class);
     	}
     	    	
-    	detailIntent.putExtra("mediaPath", toPlay);    	
+    	detailIntent.putExtra("mediaPath", toPlay);
         startActivity(detailIntent);
         
     }
