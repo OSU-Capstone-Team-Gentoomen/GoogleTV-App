@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+
+<Button
+    android:id="@+id/previous_btn"
+    android:layout_width="124dip" 
+    android:layout_height="wrap_content" 
+    android:text="Previous"
+    />
+
+<Button
+    android:id="@+id/next_btn"
+    android:layout_width="124dip" 
+    android:layout_height="wrap_content"
+    android:layout_toRightOf="@+id/previous_btn" 
+    android:text="Next"
+    />
+
+<ImageView
+    android:id="@+id/myimage"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content"
+    android:layout_below="@+id/previous_btn"
+    />         
+
+</RelativeLayout>
