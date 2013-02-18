@@ -72,8 +72,8 @@ public class ImageActivity extends Activity implements OnClickListener {
 
         ImageView imgView = (ImageView) findViewById(R.id.myimage);
         Uri uri = Uri.parse(SERVER);
-        imgView.setImageBitmap(downloadBitmap(SERVER));
-        //imgView.setImageURI(uri);
+        //imgView.setImageBitmap(downloadBitmap(SERVER));
+        imgView.setImageURI(uri);
         imgView.requestFocus();
 
     }

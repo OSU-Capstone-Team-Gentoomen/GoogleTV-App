@@ -1,2 +1,3 @@
-/network/test/.settings
-/network/test/bin/*
+Conduit/gen/*
+Conduit/._.DS_Store
+Conduit/.DS_Store
