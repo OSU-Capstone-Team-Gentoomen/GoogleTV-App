@@ -393,7 +393,13 @@ public class HttpStreamServer{
 
 	public void close(){
 		
-			try {		
+			try {				
+				/*
+				 * Stop the listening thread NOW!
+				 * or else the listen thread will accept a connection
+				 * to a dead socket if the user selects a file
+				 * before the listen thread is stopped
+				 */				 
 				listenThread.interrupt();			
 				serverSocket.close();	
 			} catch (IOException e) {				
