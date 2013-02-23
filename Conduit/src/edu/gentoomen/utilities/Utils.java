@@ -5,8 +5,6 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 import jcifs.smb.SmbFile;
-import edu.gentoomen.conduit.networking.DeviceNavigator;
-
 import android.util.Log;
 
 public class Utils {
@@ -35,7 +33,7 @@ public class Utils {
 		while (st.hasMoreTokens())
 			theMimeTypes.put(st.nextToken(), st.nextToken());
 	}
-
+	
 	public static String getMimeType(String fileName) {
 
 		String mime;
@@ -47,9 +45,18 @@ public class Utils {
 	}
 	
 	public static String getExtension(String fileName) {
-		String extension;
+		
+		String extension = "";
+		Log.d(TAG, "getting extension of: " + fileName);
 		int extensionStart = fileName.lastIndexOf('.');
-		return fileName.substring(extensionStart);
+		
+		try {
+			extension = fileName.substring(extensionStart);
+		} catch (Exception e) {
+			Log.d(TAG, "Not a valid file. File might be a folder");
+		}
+		
+		return extension;
 	}
 	
 	public static boolean isRoot(String filePath) {

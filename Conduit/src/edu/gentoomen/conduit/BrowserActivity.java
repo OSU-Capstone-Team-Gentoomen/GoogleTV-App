@@ -28,6 +28,7 @@ public class BrowserActivity extends FragmentActivity
 
 	public static final String LOG_TAG = "MainActivity";
 	private LeftNavBar mLeftNavBar;
+	
 	//List of image formats that the app supports. 
 	public static final ArrayList<String> supportedImageFormats = new ArrayList<String>();
 	static {
@@ -35,14 +36,6 @@ public class BrowserActivity extends FragmentActivity
 		supportedImageFormats.add(".png");
 		supportedImageFormats.add(".jpg");
 		supportedImageFormats.add(".jpeg");
-	}
-	
-	public static final ArrayList<String> supportedMusicFormats = new ArrayList<String>();
-	static {
-		supportedMusicFormats.add(".mp3");
-		supportedMusicFormats.add(".ogg");
-		supportedMusicFormats.add(".flac");
-		supportedMusicFormats.add(".wav");
 	}
 	
     // These are the rows that we will retrieve.
@@ -148,6 +141,7 @@ public class BrowserActivity extends FragmentActivity
     }
     
     private void setupBar() {
+    	
         ActionBar bar = getLeftNavBar();
         
         bar.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
@@ -163,12 +157,13 @@ public class BrowserActivity extends FragmentActivity
     		.setTag(R.string.tab_c)
     		.setIcon(R.drawable.tab_c)    		
             .setTabListener(new TabListener(fileList, getResources().getString(R.string.tab_c), "local")), true);
+        
     }
     
     @Override
     public void onFileSelected(String id) {
     	
-    	String toPlay = DeviceNavigator.getPath() + id;    	    
+    	//String toPlay = DeviceNavigator.getPath() + id;    	    
     	String fileType = Utils.getExtension(id);
     	Intent detailIntent;
     	
@@ -176,11 +171,12 @@ public class BrowserActivity extends FragmentActivity
     	
     	if (supportedImageFormats.contains(fileType)) {
     		detailIntent = new Intent(this, ImageActivity.class);
+    		detailIntent.putExtra("currentPath", DeviceNavigator.getPath());
+    		detailIntent.putExtra("fileName", id);
     	} else {
     		detailIntent = new Intent(this, PlayerActivity.class);
     	}
     	    	
-    	detailIntent.putExtra("mediaPath", toPlay);
         startActivity(detailIntent);
         
     }

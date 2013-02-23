@@ -36,12 +36,12 @@ public class HttpStreamServer{
 	private static final String HTTP_CLRF = "\r\n";
 
 	private static final int    HTTP_PORT = 8888;
-
-	private final SmbFile      file;	
+	
 	private final String       fileMimeType;
 	private final ServerSocket serverSocket;
 	private Thread             listenThread;
-
+	private SmbFile     	   file;
+	
 	private static Hashtable<String, String> theMimeTypes = new Hashtable<String, String>();
 	static {
 		StringTokenizer st = new StringTokenizer(					
@@ -407,13 +407,30 @@ public class HttpStreamServer{
 			}
 	}
 
-	public static String getMimeType(String fileName) {
-
-		String mime;
-		int extensionStart = fileName.lastIndexOf('.');
-		Log.d(TAG, "extension found " + fileName.substring(extensionStart));
-		mime = theMimeTypes.get(fileName.substring(extensionStart + 1).toLowerCase());
-		return mime;
-
+//	public static String getMimeType(String fileName) {
+//
+//		String mime;
+//		int extensionStart = fileName.lastIndexOf('.');
+//		Log.d(TAG, "extension found " + fileName.substring(extensionStart));
+//		mime = theMimeTypes.get(fileName.substring(extensionStart + 1).toLowerCase());
+//		return mime;
+//
+//	}
+	
+	public static int getBindPort() {
+		return HTTP_PORT;
+	}
+	
+	public void setNewFile(String newFile) {
+		
+		//Not a good solution, need to do some error handling higher up
+		SmbFile oldFile = file;
+		
+		try {
+			file = new SmbFile("smb://" + newFile);
+		} catch (MalformedURLException e) {
+			file = oldFile;
+			e.printStackTrace();
+		}
 	}
 }

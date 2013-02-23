@@ -34,6 +34,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	private static boolean              initialScanCompleted = false;
 	private static ContentResolver      resolver = null;
 	private static WifiManager          wifiInfo = null;
+	
+	@SuppressWarnings("unused")
 	private static SambaDiscoveryAgent  sAgent = null;
 	
 	/*Used to keep track of all online hosts*/

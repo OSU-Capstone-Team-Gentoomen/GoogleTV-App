@@ -119,7 +119,7 @@ public class FileListFragment extends ListFragment
         	
         	Log.d(LOG_TAG, "clicked on " + fileName);
         	try {
-        		server = new HttpStreamServer(DeviceNavigator.getPath() + fileName, HttpStreamServer.getMimeType(fileName));
+        		server = new HttpStreamServer(DeviceNavigator.getPath() + fileName, Utils.getMimeType(fileName));
 			} catch (IOException e) {				
 				e.printStackTrace();
 			}
