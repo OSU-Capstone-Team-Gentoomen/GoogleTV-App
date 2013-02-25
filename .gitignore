@@ -1,3 +1,6 @@
-Conduit/gen/*
+Conduit/gen/
+Conduit/bin/
 Conduit/._.DS_Store
 Conduit/.DS_Store
+LeftNavBarLibrary/gen/
+LeftNavBarLibrary/bin/
