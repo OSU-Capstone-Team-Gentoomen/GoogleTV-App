@@ -151,10 +151,24 @@ public class MediaContentProvider extends ContentProvider {
 			
 			for (SmbFile f : listOfFiles) {
 				try {
-					if (f.isDirectory()) 
-						curse.newRow().add(counter).add(f.getPath()).add(f.getName().substring(0, f.getName().length() - 1)).add(FOLDER);
-					else 
-						curse.newRow().add(counter).add(f.getPath()).add(f.getName()).add(MEDIA);
+					String name = f.getName();
+					int type;
+					
+					// if this is a directory, string the trailing slash
+					if (f.isDirectory()) {
+					    name = name.substring(0, name.length() - 1);
+					    type = FOLDER;
+					} else {
+						type = MEDIA;
+					}
+					
+					// TODO a more robust way of blacklisting names than a big if statement would be nice
+					if (name.equals("IPC$") || name.startsWith(".")) {
+					    continue;
+					}
+					
+					curse.newRow().add(counter).add(f.getPath()).add(name).add(type);
+					
 					counter++;					
 				} catch (SmbException e) {
 					Log.d(TAG, "SmbException: " + e.getMessage());
