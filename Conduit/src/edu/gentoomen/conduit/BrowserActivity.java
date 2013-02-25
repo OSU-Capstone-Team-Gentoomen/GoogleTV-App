@@ -64,10 +64,26 @@ public class BrowserActivity extends FragmentActivity
 	    		.setIcon(R.drawable.tab_d)
 	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);
     	}
+    	
+    	bar.addTab(bar.newTab().setText("Refresh").setTabListener(new RefreshTabListener()), false);
     }
 
     public void onLoaderReset(Loader<Cursor> loader) {}
 	
+    private class RefreshTabListener implements ActionBar.TabListener {
+    	
+    	@Override
+        public void onTabSelected(Tab tab, FragmentTransaction ft) {
+        	Log.d(LOG_TAG, "refersh tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
+        }
+
+        @Override
+        public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
+
+        @Override
+        public void onTabReselected(Tab tab, FragmentTransaction ft) {}
+    }
+    
     private class TabListener implements ActionBar.TabListener {
         	
     	private String mTitle;
