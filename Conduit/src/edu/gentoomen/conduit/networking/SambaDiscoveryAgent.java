@@ -104,22 +104,6 @@ public class SambaDiscoveryAgent {
 		
 	}
 	
-	public LinkedList<String> getFileListing(String path) throws Exception {
-		
-		LinkedList<String> fileList = new LinkedList<String>();
-		
-		SmbFile share = new SmbFile(path);			
-		SmbFile[] fileArray = share.listFiles(new FileListFilter());		
-
-		for (SmbFile file : fileArray) {
-			fileList.add(file.getName());
-			System.out.println(file.getName());
-		}
-
-		return fileList;
-		
-	}
-	
 	private class InitialScan implements Callable<Boolean> {
 
 		private String ipAddress;
