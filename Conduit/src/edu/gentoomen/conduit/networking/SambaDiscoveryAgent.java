@@ -28,38 +28,10 @@ public class SambaDiscoveryAgent {
 	
 	private static final String TAG = "Samba Disc";
 	
-	private static final String[] SYS_FOLDERS = { "C$", "H$", "IPC$", "ADMIN$" };
-	
 	@SuppressWarnings("unused")
 	private static NtlmPasswordAuthentication auth = 
 								NtlmPasswordAuthentication.ANONYMOUS;
-		
-	public class FileListFilter implements SmbFileFilter {
-		
-		private static final String TAG = "FileListFilter";
-
-		@Override
-		public boolean accept(SmbFile file) throws SmbException {
-			/*
-			 * make sure that we don't show any hidden or system files
-			 * if any of the attributes for this file are anded with these values it will 
-			 * make the end value greater than 0
-			 */
-			if ((file.getAttributes() & (SmbFile.ATTR_HIDDEN | SmbFile.ATTR_SYSTEM)) > 0) {
-				Log.d(TAG, "skipping file " + file.getName() + " for being either a system file or a hidden file");
-				return false;
-			}
 			
-			for (String str : SambaDiscoveryAgent.SYS_FOLDERS) {
-				Log.d(TAG, "file name is " + file.getName());
-				if (file.getName().equalsIgnoreCase(str))
-					return false;
-			}
-			
-			return true;
-		}
-	}
-	
 	/*Table containing all online hosts*/
 	private HashSet<Pingable>   hosts;
 	

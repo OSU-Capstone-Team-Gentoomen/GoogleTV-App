@@ -29,7 +29,7 @@ public class DeviceNavigator {
 		Log.d(TAG, "Listing " + path);
 		LinkedList<SmbFile> files = new LinkedList<SmbFile>();
 		try {
-			for (SmbFile f : new SmbFile("smb://" + path).listFiles())
+			for (SmbFile f : new SmbFile("smb://" + path).listFiles(new FileListFilter()))
 				files.add(f);
 		} catch (SmbException e) {
 			Log.d(TAG, "SmbException " + e.getMessage());
