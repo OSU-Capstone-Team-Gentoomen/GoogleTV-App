@@ -15,6 +15,9 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import edu.gentoomen.conduit.BrowserActivity;
+import edu.gentoomen.conduit.FileListFragment;
 import android.util.Log;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
@@ -36,12 +39,12 @@ public class HttpStreamServer{
 	private static final String HTTP_CLRF = "\r\n";
 
 	private static final int    HTTP_PORT = 8888;
-	
-	private final String       fileMimeType;
-	private final ServerSocket serverSocket;
-	private Thread             listenThread;
-	private SmbFile     	   file;
-	
+
+	private SmbFile      file;	
+	private String       fileMimeType;
+	private ServerSocket serverSocket;
+	private Thread       listenThread;
+
 	private static Hashtable<String, String> theMimeTypes = new Hashtable<String, String>();
 	static {
 		StringTokenizer st = new StringTokenizer(					
@@ -69,7 +72,7 @@ public class HttpStreamServer{
 	public HttpStreamServer(String path, String mimeType) throws IOException{
 
 		Log.d(TAG, "starting StreamOverHttp init");
-		file = new SmbFile("smb://" + path);		
+		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer));		
 		fileMimeType = mimeType;
 		serverSocket = new ServerSocket(HTTP_PORT);
 
@@ -126,13 +129,20 @@ public class HttpStreamServer{
 			}
 			handleResponse();
 
-			if (smbFileInputStream != null) {
-				try{
-					smbFileInputStream.close();
-				}catch(IOException e){
-					e.printStackTrace();
-				}            
-			}
+			/*
+			 * By not closing the stream, mp3s work from some reason...?
+			 * Should be garbage collected, though this is still			 
+			 * bad practice
+			 * 
+			 * Will need to investigate
+			 */
+//			if (smbFileInputStream != null) {
+//				try{
+//					smbFileInputStream.close();
+//				}catch(IOException e){
+//					e.printStackTrace();
+//				}            
+//			}
 		}     
 
 		private Properties readHeader(InputStream clientStream) throws InterruptedException, IOException {
@@ -347,6 +357,7 @@ public class HttpStreamServer{
 			} finally {
 				try {
 					clientSocket.close();
+					//smbInput.close();
 				} catch(Throwable t) {
 				}
 			}
@@ -400,8 +411,9 @@ public class HttpStreamServer{
 				 * to a dead socket if the user selects a file
 				 * before the listen thread is stopped
 				 */				 
-				listenThread.interrupt();			
-				serverSocket.close();	
+				listenThread.interrupt();
+				serverSocket.close();
+				
 			} catch (IOException e) {				
 				e.printStackTrace();
 			}
@@ -417,19 +429,17 @@ public class HttpStreamServer{
 //
 //	}
 	
-	public static int getBindPort() {
-		return HTTP_PORT;
-	}
-	
-	public void setNewFile(String newFile) {
-		
+	public void setNewFile(String newFile, String mimeType) {
+
 		//Not a good solution, need to do some error handling higher up
 		SmbFile oldFile = file;
-		
+		String oldmimeType = fileMimeType;
 		try {
-			file = new SmbFile("smb://" + newFile);
+			file = new SmbFile("smb://" + newFile, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer));
+			fileMimeType = mimeType;
 		} catch (MalformedURLException e) {
 			file = oldFile;
+			fileMimeType = oldmimeType;
 			e.printStackTrace();
 		}
 	}
