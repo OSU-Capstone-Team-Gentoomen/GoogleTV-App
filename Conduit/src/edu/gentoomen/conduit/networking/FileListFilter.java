@@ -14,6 +14,7 @@ import android.util.Log;
  * Any hidden Linux / Mac folders or files (beginning with a .)
  * Any file types that aren't included in Utils.theMimeTypes
  */
+
 public class FileListFilter implements SmbFileFilter {
 	private static final String TAG = "FileListFilter";
 	private static final String[] SYS_FOLDERS = { "C$", "H$", "IPC$", "ADMIN$" };
@@ -25,23 +26,29 @@ public class FileListFilter implements SmbFileFilter {
 		 * if any of the attributes for this file are anded with these values it will 
 		 * make the end value greater than 0
 		 */
+		
+		String name = file.getName();
+		
 		if ((file.getAttributes() & (SmbFile.ATTR_HIDDEN | SmbFile.ATTR_SYSTEM)) > 0) {
-			Log.d(TAG, "skipping file " + file.getName() + " for being either a system file or a hidden file");
+			Log.d(TAG, "skipping file " + name + " for being either a system file or a hidden file");
 			return false;
 		}
 		
 		//ignore Samba system folders
 		for (String str : SYS_FOLDERS) {
-			if (file.getName().equalsIgnoreCase(str + "/"))
+			if (name.equalsIgnoreCase(str + "/"))
 				return false;
 		}
 		
 		//ignore Linux / Mac hidden files
-		if(file.getName().startsWith("."))
+		if(name.startsWith("."))
 			return false;
 		
 		//skip this file if its mime type isn't supported
-		if(Utils.getMimeType(file.getName()) == null)
+		if(name.endsWith("/"))
+			return true;
+		
+		if (Utils.getMimeType(name) == null)
 			return false;
 		
 		return true;
