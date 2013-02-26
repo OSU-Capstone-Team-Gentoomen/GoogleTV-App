@@ -170,7 +170,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		}
 				
 		/*Iterate over the entire network and ping each ip address*/
-		for (int i = start + 1; i < end - 1; i++) {
+		for (int i = start + 2; i < end; i++) {
 			reachable = new CheckReachable();
 			reachable.execute(ipPrefix + i, "15");
 			sleep(15);
