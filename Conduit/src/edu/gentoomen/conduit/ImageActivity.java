@@ -116,7 +116,7 @@ public class ImageActivity extends Activity implements OnClickListener {
 
         }
         Log.d(TAG, "New file selected: " + currentPath + listOfPictures.get(current_image_index).getName());
-        FileListFragment.server.setNewFile(currentPath + listOfPictures.get(current_image_index).getName());
+        FileListFragment.server.setNewFile(currentPath + listOfPictures.get(current_image_index).getName(), Utils.getMimeType(listOfPictures.get(current_image_index).getName()));
         showImage();
     }
     

@@ -31,6 +31,7 @@ public class FileListFragment extends ListFragment
 	private String selectedFile ="";
 	
 	protected static HttpStreamServer server;
+	public static String selectedServer = null;
 	
 	private static final String LOG_TAG = "FileListFragment";
 	SimpleCursorAdapter mAdapter;

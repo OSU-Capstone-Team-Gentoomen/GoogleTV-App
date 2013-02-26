@@ -5,12 +5,16 @@ import java.util.ArrayList;
 import com.example.google.tv.leftnavbar.LeftNavBar;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
+import edu.gentoomen.utilities.SmbCredentials;
 import edu.gentoomen.utilities.Utils;
 
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.app.ActionBar.Tab;
 import android.support.v4.app.LoaderManager;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -19,15 +23,21 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 import android.util.Log;
 
 public class BrowserActivity extends FragmentActivity 
 	implements FileListFragment.Callbacks, LoaderManager.LoaderCallbacks<Cursor> {
 
 	public static final String LOG_TAG = "MainActivity";
+	
 	private LeftNavBar mLeftNavBar;
+	private static SmbCredentials credentials;
+	private static Context context;
 	
 	//List of image formats that the app supports. 
 	public static final ArrayList<String> supportedImageFormats = new ArrayList<String>();
@@ -96,16 +106,74 @@ public class BrowserActivity extends FragmentActivity
     	
     	@Override
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
-        	Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
+//        	Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
+//        	
+//        	/*Check to ensure that the tag passed in is a valid IP address*/
+//        	if (!tab.getTag().toString().matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
+//        		return;        	
+//        	
+//        	mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
+//        	mFileList.setDevice(tab.getTag().toString());        	
+//        	ActionBar bar = getLeftNavBar();
+//        	bar.setTitle(mTitle);
+    		
+    		Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
         	
         	/*Check to ensure that the tag passed in is a valid IP address*/
         	if (!tab.getTag().toString().matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
         		return;        	
+
+        	FileListFragment.selectedServer = (String) tab.getTag();
         	
-        	mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
-        	mFileList.setDevice(tab.getTag().toString());        	
-        	ActionBar bar = getLeftNavBar();
-        	bar.setTitle(mTitle);
+        	if (credentials.ipHasAuth(FileListFragment.selectedServer)) {
+        		Log.d(LOG_TAG, "ip address authentication exists");
+        		loginToShare();
+        		return;
+        	}
+        	
+        	AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        	builder.setTitle("Enter Username and Password");
+        	LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE); 
+        	final View view = inflater.inflate(R.layout.dialog_logon, null);
+        	builder.setView(view);        	      
+        	
+        	builder.setPositiveButton("Login", new DialogInterface.OnClickListener() {
+    			
+    			@Override
+    			public void onClick(DialogInterface dialog, int which) {    				
+    				String username = ((EditText)view.findViewById(R.id.username)).getText().toString();
+    				String password = ((EditText)view.findViewById(R.id.password)).getText().toString();
+    				
+    				if(!username.isEmpty() && !password.isEmpty()) {
+    					credentials.addCredentials(FileListFragment.selectedServer, username, password);
+    					loginToShare();
+    				}
+    				
+    				return;
+    				
+    			}
+    		});
+        	
+        	builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+    			
+    			@Override
+    			public void onClick(DialogInterface dialog, int which) {				    				
+    			}
+    		});
+        	
+        	builder.setNeutralButton("Login as Guest", new DialogInterface.OnClickListener() {
+    			
+    			@Override
+    			public void onClick(DialogInterface dialog, int which) {    				
+    				
+    				credentials.addCredentials(FileListFragment.selectedServer, "guest", "");
+    				loginToShare();
+    	        	
+    			}
+    		});
+        	
+        	builder.create();
+        	builder.show();
         }
 
         @Override
@@ -114,7 +182,16 @@ public class BrowserActivity extends FragmentActivity
         @Override
         public void onTabReselected(Tab tab, FragmentTransaction ft) {
         	mFileList.getListView().requestFocus();
-        }    	
+        }
+        
+        private void loginToShare() {
+    		
+    		mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
+        	mFileList.setDevice(FileListFragment.selectedServer);        	
+        	ActionBar bar = getLeftNavBar();
+        	bar.setTitle(mTitle);
+        	
+    	}
     }
     
     public void onBackPressed() {
@@ -131,8 +208,9 @@ public class BrowserActivity extends FragmentActivity
     public void onCreate(Bundle savedInstanceState) {
     	
         super.onCreate(savedInstanceState);
-                
+        credentials = new SmbCredentials();
         DiscoveryAgent discoveryAgent = new DiscoveryAgent(this);
+        context = this;
         discoveryAgent.execute("");
         setContentView(R.layout.browser_activity);
         setupBar();
@@ -208,4 +286,9 @@ public class BrowserActivity extends FragmentActivity
         getMenuInflater().inflate(R.menu.browser_activity, menu);
         return true;
     }
+    
+    public static SmbCredentials getCredentials() {
+    	return credentials;
+    }
+    
 }
