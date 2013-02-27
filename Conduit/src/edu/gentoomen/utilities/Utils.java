@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 import jcifs.smb.SmbFile;
+import android.annotation.SuppressLint;
 import android.util.Log;
 
 public class Utils {
@@ -14,7 +15,6 @@ public class Utils {
 	private static Hashtable<String, String> theMimeTypes = new Hashtable<String, String>();
 	static {
 		StringTokenizer st = new StringTokenizer(					
-						"txt		text/plain "+
 						"gif		image/gif "+
 						"jpg		image/jpeg "+
 						"jpeg		image/jpeg "+
@@ -25,16 +25,21 @@ public class Utils {
 						"mkv		video/x-matroska " +
 						"avi 		video/x-msvideo " +
 						"ogv		video/ogg " +
-						"flv		video/x-flv " +
 						"mov		video/quicktime " +
-						"swf		application/x-shockwave-flash " +
-						"ogg		application/x-ogg "+
-						"class		application/octet-stream " );
+						"ogg		application/x-ogg ");
 		while (st.hasMoreTokens())
 			theMimeTypes.put(st.nextToken(), st.nextToken());
 	}
 	
+	@SuppressLint("DefaultLocale")
 	public static String getMimeType(String fileName) {
+		
+		//return null if this is a folder
+		if(fileName.endsWith("/"))
+			return null;
+		
+		if(!fileName.contains("."))
+			return null;
 
 		String mime;
 		int extensionStart = fileName.lastIndexOf('.');
