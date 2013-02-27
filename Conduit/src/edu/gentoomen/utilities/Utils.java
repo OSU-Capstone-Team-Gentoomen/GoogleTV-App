@@ -24,7 +24,8 @@ public class Utils {
 						"mp4		video/mp4 " +
 						"mkv		video/x-matroska " +
 						"avi 		video/x-msvideo " +
-						"ogv		video/ogg " +
+						"ogv		video/ogg " + 
+						"ogm		video/ogg " + 
 						"mov		video/quicktime " +
 						"ogg		application/x-ogg ");
 		while (st.hasMoreTokens())
