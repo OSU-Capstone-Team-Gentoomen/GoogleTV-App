@@ -2,6 +2,7 @@
 
     <string name="app_name">Conduit</string>
     <string name="menu_exit">Exit</string>
+    <string name="device_logout">Logout of device</string>
     <string name="username">User Name</string>
     <string name="password">Password</string>
     
