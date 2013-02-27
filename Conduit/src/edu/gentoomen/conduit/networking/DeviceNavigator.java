@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 
+import edu.gentoomen.conduit.BrowserActivity;
+import edu.gentoomen.conduit.FileListFragment;
 import edu.gentoomen.utilities.Utils;
 
 import jcifs.smb.SmbException;
@@ -29,7 +31,7 @@ public class DeviceNavigator {
 		Log.d(TAG, "Listing " + path);
 		LinkedList<SmbFile> files = new LinkedList<SmbFile>();
 		try {
-			for (SmbFile f : new SmbFile("smb://" + path).listFiles(new FileListFilter()))
+			for (SmbFile f : new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer)).listFiles(new FileListFilter()))
 				files.add(f);
 		} catch (SmbException e) {
 			Log.d(TAG, "SmbException " + e.getMessage());
