@@ -20,7 +20,7 @@ import android.util.Log;
 public class NetworkContentProvider extends ContentProvider {
 	
 	//Our database
-	private SQLiteDatabase mDB;
+	private static SQLiteDatabase mDB;
 	
 	//Name of our table
 	public static final String  TABLE_DEVICES = "devices";
@@ -44,9 +44,11 @@ public class NetworkContentProvider extends ContentProvider {
 	public static final String  COL_NBTADR = "nbtAdr";
 	
 	//Column Indexes
-	public static final int IPADDR_COLUMN = 1;
-	public static final int ONLINE_COLUMN = 2;
-	public static final int SAMBA_COLUMN = 3;
+	public static final int     IPADDR_COLUMN = 1;
+	public static final int     ONLINE_COLUMN = 2;
+	public static final int     SAMBA_COLUMN = 3;
+	
+	
 	
 	//URI for this provider
 	public static final Uri CONTENT_URI = 
@@ -69,17 +71,17 @@ public class NetworkContentProvider extends ContentProvider {
 		
 	}
 
+	private static final String CREATE_TABLE_DEVICES = 
+			"create table "  + TABLE_DEVICES + " ("
+			+ ID             + " integer, "
+			+ COL_IP_ADDRESS + " text primary key,"
+			+ COL_ONLINE     + " integer not null, " 
+			+ COL_SAMBA      + " integer not null, "
+			+ COL_NBTADR 	 + " text);"; 
+	
 	// Our DB helper class
 	private static class DeviceHostDatabaseHelper extends SQLiteOpenHelper {
-		
-		private static final String CREATE_TABLE_DEVICES = 
-				"create table "  + TABLE_DEVICES + " ("
-				+ ID             + " integer, "
-				+ COL_IP_ADDRESS + " text primary key,"
-				+ COL_ONLINE     + " integer not null, " 
-				+ COL_SAMBA      + " integer not null, "
-				+ COL_NBTADR 	 + " text);"; 
-		
+					
 		public DeviceHostDatabaseHelper(Context context, String name, 
 										CursorFactory factory, int version) {
 			super(context, name, factory, version);		
@@ -234,6 +236,11 @@ public class NetworkContentProvider extends ContentProvider {
 				throw new IllegalArgumentException("Unknown Column in projection");
 		}
 		
+	}
+	
+	public static void clearDatabase() {
+		mDB.execSQL("DROP TABLE IF EXISTS " + TABLE_DEVICES);
+		mDB.execSQL(CREATE_TABLE_DEVICES);
 	}
 	
 }

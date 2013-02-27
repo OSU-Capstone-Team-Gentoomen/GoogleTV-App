@@ -5,6 +5,7 @@ import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -15,6 +16,7 @@ import android.os.AsyncTask;
 import android.os.StrictMode;
 import android.util.Log;
 
+import edu.gentoomen.conduit.BrowserActivity;
 import edu.gentoomen.conduit.NetworkContentProvider;
 import edu.gentoomen.conduit.networking.Pingable;
 import edu.gentoomen.utilities.Services;
@@ -24,6 +26,8 @@ import edu.gentoomen.utilities.Services;
  */
 public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
+	private static String				TAG = "DiscoveryAgent";
+	
 	/*Emulator settings*/
 	private final String                EMU_IP_PREFIX = "192.168.1.";
 	private final int                   EMU_IP_LOW = 1;
@@ -31,9 +35,9 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	private final boolean               EMU_MODE = false;
 	
 	/*Static fields for this class*/
-	private static boolean              initialScanCompleted = false;
+	//public  static boolean              initialScanCompleted = false;
 	private static ContentResolver      resolver = null;
-	private static WifiManager          wifiInfo = null;
+	private static WifiManager          wifiInfo = null;	
 	
 	@SuppressWarnings("unused")
 	private static SambaDiscoveryAgent  sAgent = null;
@@ -65,15 +69,21 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	
 	public DiscoveryAgent(Context context) {		
 		
-		if(resolver == null)
+		Log.d(TAG,"Creating new Discovery Agent");
+		if (resolver == null)
 			resolver = context.getContentResolver();
 
+		if (hosts.size() > 0) {
+			hosts.clear();
+		}
 		
 		/*Get our wifi service for our device networking information*/
-		if(wifiInfo == null) {
+		if (wifiInfo == null) {
 			wifiInfo = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
 			info = wifiInfo.getDhcpInfo();
 		}
+		
+		
 		
 	}
 		
@@ -83,16 +93,23 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	 */
 	public String doInBackground(String... params){
 		
-		/*Do our scan for online hosts if it hasn't already been done*/
-		if (!initialScanCompleted) {			
-			getIpRange();
-			findAvailHosts();
-			sAgent = new SambaDiscoveryAgent(hosts);				
-		}			
+		/*Do our scan for online hosts*/				
+		getIpRange();
+		findAvailHosts();
+		sAgent = new SambaDiscoveryAgent(hosts);		
 		
 		return "";
 	}
 
+	@Override
+	public void onPostExecute(String results) {
+		
+		ProgressDialog dialog = BrowserActivity.getLoaderCircle();
+		
+		if (dialog != null && dialog.isShowing())
+			dialog.cancel();
+		
+	}
 	
 	/*how many scanned IPs are stored in the database*/
 	public int getScannedCount() {
@@ -192,10 +209,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 			arp.get();
 		} catch (InterruptedException e) {		
 		} catch (ExecutionException e) {			
-		}
+		}			
 		
-		initialScanCompleted = true;
-	
 	}
 	
 	/*
@@ -263,7 +278,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	 * be active and updates the ContentProvider to reflect
 	 * the service found 
 	 */
-	protected static void changeFlag(String column, int flag, String ip) {
+	public static void changeFlag(String column, int flag, String ip) {
 		
 		ContentValues values = new ContentValues();		
 		
@@ -273,4 +288,5 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 						NetworkContentProvider.ID + "=" + ip.hashCode(), null);
 		
 	}
+		
 }

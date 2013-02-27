@@ -54,4 +54,12 @@ public class SmbCredentials {
 		}
 		
 	}
+	
+	public void clearCredentials() {
+		creds.clear();
+	}
+	
+	public void removeCredential(String ip) {
+		creds.remove(ip);
+	}
 }

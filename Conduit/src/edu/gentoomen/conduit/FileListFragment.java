@@ -30,11 +30,11 @@ public class FileListFragment extends ListFragment
 	
 	private String selectedFile ="";
 	
-	protected static HttpStreamServer server;
+	public static HttpStreamServer server;
 	public static String selectedServer = null;
 	
 	private static final String LOG_TAG = "FileListFragment";
-	SimpleCursorAdapter mAdapter;
+	private static SimpleCursorAdapter mAdapter;
 	
     private Callbacks mCallbacks = browserCallback;
 
@@ -217,5 +217,9 @@ public class FileListFragment extends ListFragment
     	DeviceNavigator.setPath("");
     	setPath(device);
     	
+    }
+    
+    public void clearAllFiles() {    	
+    	mAdapter.swapCursor(null);
     }
 }

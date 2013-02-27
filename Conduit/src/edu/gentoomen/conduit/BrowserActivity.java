@@ -12,6 +12,7 @@ import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.app.ActionBar.Tab;
+import android.app.ProgressDialog;
 import android.support.v4.app.LoaderManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -28,6 +29,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.util.Log;
 
 public class BrowserActivity extends FragmentActivity 
@@ -38,6 +40,9 @@ public class BrowserActivity extends FragmentActivity
 	private LeftNavBar mLeftNavBar;
 	private static SmbCredentials credentials;
 	private static Context context;
+	private static DiscoveryAgent discoveryAgent;
+	private static ProgressDialog loaderCircle;
+	
 	
 	//List of image formats that the app supports. 
 	public static final ArrayList<String> supportedImageFormats = new ArrayList<String>();
@@ -58,14 +63,18 @@ public class BrowserActivity extends FragmentActivity
     	NetworkContentProvider.COL_SAMBA + "=1"
     };
     
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {        
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {    	
         return new CursorLoader(this, NetworkContentProvider.CONTENT_URI, SUMMARY_PROJECTION, "", null, "");
     }
 
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {        
+    	
     	ActionBar bar = getLeftNavBar();
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
     	bar.removeAllTabs();
+    	
+    	/*Add the refresh tab*/
+    	bar.addTab(bar.newTab().setText("Refresh").setTabListener(new RefreshTabListener()), false);
     	
     	while (data.moveToNext()) {
 	        bar.addTab(bar.newTab()
@@ -74,8 +83,7 @@ public class BrowserActivity extends FragmentActivity
 	    		.setIcon(R.drawable.tab_d)
 	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);
     	}
-    	
-    	bar.addTab(bar.newTab().setText("Refresh").setTabListener(new RefreshTabListener()), false);
+    	    	
     }
 
     public void onLoaderReset(Loader<Cursor> loader) {}
@@ -84,14 +92,35 @@ public class BrowserActivity extends FragmentActivity
     	
     	@Override
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
-        	Log.d(LOG_TAG, "refersh tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
+        	
+    		ActionBar bar = getLeftNavBar();    		    		    
+    		loaderCircle.show();    		
+    		((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
+    		
+    		bar.removeAllTabs();
+        	
+        	/*Add the refresh tab*/
+        	bar.addTab(bar.newTab().setText("Refresh").setTabListener(new RefreshTabListener()), false);
+        	
+        	NetworkContentProvider.clearDatabase();
+        	discoveryAgent.cancel(true);
+    		discoveryAgent = new DiscoveryAgent(context);
+    		discoveryAgent.execute("");
+    		
+    		/*Will no longer call this function once we key on mac addresses*/
+        	credentials.clearCredentials();
+        	
+        	onCreateLoader(0, null);
+        	
         }
 
         @Override
         public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
 
         @Override
-        public void onTabReselected(Tab tab, FragmentTransaction ft) {}
+        public void onTabReselected(Tab tab, FragmentTransaction ft) {
+        	onTabReselected(tab, ft);
+        }
     }
     
     private class TabListener implements ActionBar.TabListener {
@@ -106,16 +135,6 @@ public class BrowserActivity extends FragmentActivity
     	
     	@Override
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
-//        	Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
-//        	
-//        	/*Check to ensure that the tag passed in is a valid IP address*/
-//        	if (!tab.getTag().toString().matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
-//        		return;        	
-//        	
-//        	mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
-//        	mFileList.setDevice(tab.getTag().toString());        	
-//        	ActionBar bar = getLeftNavBar();
-//        	bar.setTitle(mTitle);
     		
     		Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
         	
@@ -181,7 +200,8 @@ public class BrowserActivity extends FragmentActivity
 
         @Override
         public void onTabReselected(Tab tab, FragmentTransaction ft) {
-        	mFileList.getListView().requestFocus();
+        	//mFileList.getListView().requestFocus();
+        	onTabSelected(tab, ft);
         }
         
         private void loginToShare() {
@@ -208,10 +228,19 @@ public class BrowserActivity extends FragmentActivity
     public void onCreate(Bundle savedInstanceState) {
     	
         super.onCreate(savedInstanceState);
-        credentials = new SmbCredentials();
-        DiscoveryAgent discoveryAgent = new DiscoveryAgent(this);
+        
         context = this;
+        credentials = new SmbCredentials();
+        
+        loaderCircle = new ProgressDialog(context);
+        loaderCircle.setCancelable(false);
+        loaderCircle.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        loaderCircle.setMessage("Analyzing your network, please wait");
+        loaderCircle.show();
+        
+        discoveryAgent = new DiscoveryAgent(this);        
         discoveryAgent.execute("");
+        
         setContentView(R.layout.browser_activity);
         setupBar();
         
@@ -225,11 +254,18 @@ public class BrowserActivity extends FragmentActivity
         }
         return mLeftNavBar;
     }
-
+        
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.menu_exit) {
+    
+        switch (item.getItemId()) {        
+        case R.id.menu_exit:
         	finish();
+        	break;        
+        case R.id.device_logout:
+        	((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
+        	credentials.removeCredential(FileListFragment.selectedServer);
+        	break;        
         }
         return true;
     }
@@ -242,7 +278,7 @@ public class BrowserActivity extends FragmentActivity
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME, ActionBar.DISPLAY_SHOW_HOME);
         bar.setDisplayOptions(LeftNavBar.DISPLAY_AUTO_EXPAND, LeftNavBar.DISPLAY_AUTO_EXPAND);
-        bar.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);
+        bar.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);        
         
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
 
@@ -257,7 +293,7 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public void onFileSelected(String id) {
     	
-    	//String toPlay = DeviceNavigator.getPath() + id;    	    
+    	//String toPlay = DeviceNavigator.getPath() + id;     
     	String fileType = Utils.getExtension(id);
     	Intent detailIntent;
     	
@@ -289,6 +325,10 @@ public class BrowserActivity extends FragmentActivity
     
     public static SmbCredentials getCredentials() {
     	return credentials;
+    }
+    
+    public static ProgressDialog getLoaderCircle() {
+    	return loaderCircle;
     }
     
 }

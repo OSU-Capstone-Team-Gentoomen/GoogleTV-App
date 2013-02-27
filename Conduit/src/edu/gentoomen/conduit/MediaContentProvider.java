@@ -91,7 +91,7 @@ public class MediaContentProvider extends ContentProvider {
 	public static boolean isRoot() {
 		
 		try {
-			return (new SmbFile("smb://" + DeviceNavigator.getPath(),  BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer)).getParent().toString().equalsIgnoreCase("smb://"));
+			return (new SmbFile("smb://" + DeviceNavigator.getPath(), BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer)).getParent().toString().equalsIgnoreCase("smb://"));
 		} catch (MalformedURLException e) {
 			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.getPath());
 		}
