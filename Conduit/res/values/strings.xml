@@ -2,6 +2,8 @@
 
     <string name="app_name">Conduit</string>
     <string name="menu_exit">Exit</string>
+    <string name="username">User Name</string>
+    <string name="password">Password</string>
     
     <string name="title_activity_main">Conduit</string>
 
