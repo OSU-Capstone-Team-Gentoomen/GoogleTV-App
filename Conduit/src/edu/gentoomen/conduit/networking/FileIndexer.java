@@ -30,6 +30,7 @@ public class FileIndexer extends AsyncTask<Object, Void, String> {
 		
 	}
 	
+	@SuppressWarnings("unused")
 	private void insertIntoProvider(SmbFile file) {
 		
 		ContentValues values = new ContentValues();

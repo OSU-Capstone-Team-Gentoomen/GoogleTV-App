@@ -15,21 +15,19 @@ public class ArpScan extends AsyncTask<Void, Void, String> {
 	
 	@Override
 	protected String doInBackground(Void... params) {
-		try {
-			
+		try {			
 			BufferedReader reader = new BufferedReader(new FileReader("/proc/net/arp"));
 			String line;
 			
-			try {
-				
+			try {				
 				while((line = reader.readLine()) != null) {
 					String split[] = line.split(" +");
 					if(split != null && split.length >= 4) {
 						String macAddress = split[3];
 						String ip = split[0];
 						if(macAddress.matches("..:..:..:..:..:..") && !macAddress.equals("00:00:00:00:00:00")) {
-							Log.d(TAG, "Found host " + ip);
-							addNewHost(ip);							
+							Log.d(TAG, "Found host " + ip + " with mac " + macAddress);
+							addNewHost(ip, macAddress);							
 						}						
 					}
 				}				
@@ -40,8 +38,8 @@ public class ArpScan extends AsyncTask<Void, Void, String> {
 		return null;
 	}
 	
-	private void addNewHost(String ip) {
-		DiscoveryAgent.addNewHostToSet(ip);		
+	private void addNewHost(String ip, String mac) {		
+		DiscoveryAgent.addNewHostToSet(ip, mac);		
 	}
 
 }

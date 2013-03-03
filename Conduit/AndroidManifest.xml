@@ -28,11 +28,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <provider
-            android:name="DummyProvider"
-            android:authorities="edu.gentoomen.conduit.dummyprovider">
-        </provider>
+               
         <provider
         	android:name="NetworkContentProvider"
         	android:authorities="edu.gentoomen.conduit.networking"

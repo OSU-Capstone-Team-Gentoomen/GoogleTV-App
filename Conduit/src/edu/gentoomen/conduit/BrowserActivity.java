@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import com.example.google.tv.leftnavbar.LeftNavBar;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
+import edu.gentoomen.conduit.networking.Pingable;
 import edu.gentoomen.utilities.SmbCredentials;
 import edu.gentoomen.utilities.Utils;
 
@@ -29,7 +30,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.util.Log;
 
 public class BrowserActivity extends FragmentActivity 
@@ -37,11 +37,16 @@ public class BrowserActivity extends FragmentActivity
 
 	public static final String LOG_TAG = "MainActivity";
 	
+	private static final int IPADDR_COL = 1;
+	private static final int MAC_ADDR_COL = 2;
+	private static final int NBT_COL = 3;
+	
 	private LeftNavBar mLeftNavBar;
 	private static SmbCredentials credentials;
-	private static Context context;
+	private static Context 		  context;
 	private static DiscoveryAgent discoveryAgent;
 	private static ProgressDialog loaderCircle;
+	private static boolean 		  initialScanCompleted = false;
 	
 	
 	//List of image formats that the app supports. 
@@ -56,7 +61,9 @@ public class BrowserActivity extends FragmentActivity
     // These are the rows that we will retrieve.
     static final String[] SUMMARY_PROJECTION = new String[] {
         NetworkContentProvider.ID,
-        NetworkContentProvider.COL_IP_ADDRESS,
+        NetworkContentProvider.COL_IP_ADDRESS,        
+        NetworkContentProvider.COL_MAC,
+        NetworkContentProvider.COL_NBTADR
     };
     
     static final String[] SELECT_SAMBA = new String[] {
@@ -74,16 +81,31 @@ public class BrowserActivity extends FragmentActivity
     	bar.removeAllTabs();
     	
     	/*Add the refresh tab*/
-    	bar.addTab(bar.newTab().setText("Refresh").setTabListener(new RefreshTabListener()), false);
-    	
+    	bar.addTab(bar.newTab()
+			   .setText("Refresh")
+			   .setTabListener(new RefreshTabListener())
+			   .setIcon(R.drawable.refresh_normal), false);
+    	    	    
     	while (data.moveToNext()) {
+    		String title;
+    		String ip = data.getString(IPADDR_COL);
+    		String mac = data.getString(MAC_ADDR_COL);
+    		String nbtName = data.getString(NBT_COL);
+    		
+    		if (nbtName == null)
+    			title = ip;
+    		else
+    			title = nbtName;
+    		
+    		Log.d(LOG_TAG, "adding mac address " + mac + " to side bar");
+    		
 	        bar.addTab(bar.newTab()
-	    		.setText(data.getString(1))
-	    		.setTag(data.getString(1))
+	    		.setText(title)
+	    		.setTag(DiscoveryAgent.macToPingable(mac, ip, nbtName))
 	    		.setIcon(R.drawable.tab_d)
-	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);
+	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);	        	
     	}
-    	    	
+    	
     }
 
     public void onLoaderReset(Loader<Cursor> loader) {}
@@ -106,9 +128,6 @@ public class BrowserActivity extends FragmentActivity
         	discoveryAgent.cancel(true);
     		discoveryAgent = new DiscoveryAgent(context);
     		discoveryAgent.execute("");
-    		
-    		/*Will no longer call this function once we key on mac addresses*/
-        	credentials.clearCredentials();
         	
         	onCreateLoader(0, null);
         	
@@ -132,20 +151,26 @@ public class BrowserActivity extends FragmentActivity
     		mTitle = title;
     		mFileList = fileList;
     	}
-    	
-    	@Override
-        public void onTabSelected(Tab tab, FragmentTransaction ft) {
+    	    	    	    
+    	@Override /*Function needs refactoring*/
+        public void onTabSelected(final Tab tab, FragmentTransaction ft) {    		    
     		
-    		Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
-        	
-        	/*Check to ensure that the tag passed in is a valid IP address*/
-        	if (!tab.getTag().toString().matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
-        		return;        	
+    		try {
+    			
+    			Log.d(LOG_TAG, "tab selected " + ((Pingable)tab.getTag()).mac + " tab position: " + tab.getPosition());
+	        	/*Check to ensure that the tag passed in is a valid IP address*/
+	        	if (!((Pingable)tab.getTag()).ip.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
+	        		return;
 
-        	FileListFragment.selectedServer = (String) tab.getTag();
+    		} catch (Exception e) {
+    			Log.d(LOG_TAG, "Invalid tab selected");
+    			return;
+    		}
+    		
+        	FileListFragment.selectedServer = ((Pingable)tab.getTag());
         	
-        	if (credentials.ipHasAuth(FileListFragment.selectedServer)) {
-        		Log.d(LOG_TAG, "ip address authentication exists");
+        	if (credentials.hostHasAuth(FileListFragment.selectedServer.mac)) {
+        		Log.d(LOG_TAG, "host address authentication exists");
         		loginToShare();
         		return;
         	}
@@ -164,7 +189,7 @@ public class BrowserActivity extends FragmentActivity
     				String password = ((EditText)view.findViewById(R.id.password)).getText().toString();
     				
     				if(!username.isEmpty() && !password.isEmpty()) {
-    					credentials.addCredentials(FileListFragment.selectedServer, username, password);
+    					credentials.addCredentials(((Pingable) tab.getTag()).mac, username, password);
     					loginToShare();
     				}
     				
@@ -185,7 +210,7 @@ public class BrowserActivity extends FragmentActivity
     			@Override
     			public void onClick(DialogInterface dialog, int which) {    				
     				
-    				credentials.addCredentials(FileListFragment.selectedServer, "guest", "");
+    				credentials.addCredentials(FileListFragment.selectedServer.mac, "guest", "");
     				loginToShare();
     	        	
     			}
@@ -206,8 +231,15 @@ public class BrowserActivity extends FragmentActivity
         
         private void loginToShare() {
     		
+        	String title;
+        	
+        	if (FileListFragment.selectedServer.nbtName != null)
+        		title = FileListFragment.selectedServer.nbtName;
+        	else
+        		title = FileListFragment.selectedServer.ip;
+        	
     		mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
-        	mFileList.setDevice(FileListFragment.selectedServer);        	
+        	mFileList.setDevice(title);        	
         	ActionBar bar = getLeftNavBar();
         	bar.setTitle(mTitle);
         	
@@ -230,16 +262,19 @@ public class BrowserActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         
         context = this;
-        credentials = new SmbCredentials();
-        
         loaderCircle = new ProgressDialog(context);
         loaderCircle.setCancelable(false);
         loaderCircle.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         loaderCircle.setMessage("Analyzing your network, please wait");
-        loaderCircle.show();
+
         
-        discoveryAgent = new DiscoveryAgent(this);        
-        discoveryAgent.execute("");
+        if (!initialScanCompleted) {         	
+            credentials = new SmbCredentials();            	       
+	        loaderCircle.show();	        
+	        discoveryAgent = new DiscoveryAgent(this);        
+	        discoveryAgent.execute("");
+	        initialScanCompleted = true;
+        }
         
         setContentView(R.layout.browser_activity);
         setupBar();
@@ -264,7 +299,7 @@ public class BrowserActivity extends FragmentActivity
         	break;        
         case R.id.device_logout:
         	((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
-        	credentials.removeCredential(FileListFragment.selectedServer);
+        	credentials.removeCredential(FileListFragment.selectedServer.mac);
         	break;        
         }
         return true;
@@ -274,7 +309,7 @@ public class BrowserActivity extends FragmentActivity
     	
         ActionBar bar = getLeftNavBar();
         
-        bar.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+        bar.setBackgroundDrawable(new ColorDrawable(Color.BLACK));        
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME, ActionBar.DISPLAY_SHOW_HOME);
         bar.setDisplayOptions(LeftNavBar.DISPLAY_AUTO_EXPAND, LeftNavBar.DISPLAY_AUTO_EXPAND);
@@ -310,7 +345,7 @@ public class BrowserActivity extends FragmentActivity
         startActivity(detailIntent);
         
     }
-
+    
     @Override
     public void onPathChanged(String path) {
     	ActionBar bar = getLeftNavBar();

@@ -2,7 +2,8 @@ package edu.gentoomen.conduit.networking;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import android.app.ProgressDialog;
@@ -15,10 +16,8 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.StrictMode;
 import android.util.Log;
-
 import edu.gentoomen.conduit.BrowserActivity;
 import edu.gentoomen.conduit.NetworkContentProvider;
-import edu.gentoomen.conduit.networking.Pingable;
 import edu.gentoomen.utilities.Services;
 
 /*
@@ -43,8 +42,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	private static SambaDiscoveryAgent  sAgent = null;
 	
 	/*Used to keep track of all online hosts*/
-	protected static HashSet<Pingable>  hosts = new HashSet<Pingable>();
-	protected static DhcpInfo 			info = null;
+	private static Map<String, Pingable>  hosts = new HashMap<String, Pingable>();
+	private static DhcpInfo 			 info = null;
 	
 	/*The highest and lowest ip addresses in our subnet*/	
 	protected static int                lowest = 0;
@@ -69,22 +68,20 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	
 	public DiscoveryAgent(Context context) {		
 		
-		Log.d(TAG,"Creating new Discovery Agent");
+		Log.d(TAG, "Creating new Discovery Agent");		
 		if (resolver == null)
 			resolver = context.getContentResolver();
 
 		if (hosts.size() > 0) {
 			hosts.clear();
-		}
+		}	
 		
 		/*Get our wifi service for our device networking information*/
 		if (wifiInfo == null) {
 			wifiInfo = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
 			info = wifiInfo.getDhcpInfo();
 		}
-		
-		
-		
+					
 	}
 		
 	/* 
@@ -92,13 +89,17 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	 * default gateway and scan for samba shares
 	 */
 	public String doInBackground(String... params){
-		
+					
 		/*Do our scan for online hosts*/				
 		getIpRange();
 		findAvailHosts();
-		sAgent = new SambaDiscoveryAgent(hosts);		
+		
+		/*Look for samba shares from online hosts*/
+		sAgent = new SambaDiscoveryAgent();		
+				
 		
 		return "";
+		
 	}
 
 	@Override
@@ -165,7 +166,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 	}
 	
-	/*Scan the entire subnet to find all hosts without a firewall*/
+	/*Scan the entire subnet to find all online hosts*/
 	private void findAvailHosts() {
 		
 		int start;
@@ -173,7 +174,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		int[] gateway;
 		String ipPrefix;
 		
-		if (EMU_MODE) {			
+		if (EMU_MODE) {
 			start = EMU_IP_LOW;
 			end = EMU_IP_HIGH;
 			ipPrefix = EMU_IP_PREFIX;			
@@ -242,26 +243,38 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 	}
 	
-	protected static void addNewHostToSet(String ip) {
+	/*
+	 * Adds online hosts to a hashset which will be used by other discovery services
+	 * to determine if the hosts contain a sharing service
+	 * 
+	 * This function does not add anything to the content provider, it just
+	 * adds hosts to the hashset to be used by other discovery services
+	 */
+	public static void addNewHostToSet(String ip, String macAddress) {
+		
 		try {
-			hosts.add(new Pingable(InetAddress.getByName(ip)));
+			hosts.put(macAddress, new Pingable(InetAddress.getByName(ip), macAddress, null));
 		} catch (UnknownHostException e) { 		
 		}
+		
 	}
 	
 	/*
-	 * Called when a new host is found from the
-	 * arp table scan. Will attempt to add the new host
+	 * Called when a host share is found from the
+	 * share discovery agents. Will attempt to add the new host
 	 * to the ContentProvider
 	 */
-	protected static void addNewHost(Pingable p, Services s) {
+	public static void addNewHost(Pingable p, Services s) {
 		
 		ContentValues values = new ContentValues();
 		String ip = p.addr.getHostAddress();
-						
+		String macAddress = p.mac;			
+		
 		values.put(NetworkContentProvider.ID, ip.hashCode());
 		values.put(NetworkContentProvider.COL_IP_ADDRESS, ip);
+		values.put(NetworkContentProvider.COL_MAC, macAddress);
 		values.put(NetworkContentProvider.COL_ONLINE, 1);
+		values.put(NetworkContentProvider.COL_NBTADR, p.nbtName);
 		
 		if(s == Services.Samba)
 			values.put(NetworkContentProvider.COL_SAMBA, 1);
@@ -269,7 +282,6 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 			values.put(NetworkContentProvider.COL_SAMBA, 0);
 		
 		resolver.insert(NetworkContentProvider.CONTENT_URI, values);
-
 		
 	}
 	
@@ -278,7 +290,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	 * be active and updates the ContentProvider to reflect
 	 * the service found 
 	 */
-	public static void changeFlag(String column, int flag, String ip) {
+	public static void changeSambaFlag(String column, int flag, String ip) {
 		
 		ContentValues values = new ContentValues();		
 		
@@ -288,5 +300,18 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 						NetworkContentProvider.ID + "=" + ip.hashCode(), null);
 		
 	}
+	
+	public static Map<String, Pingable> getHostSet() {
+		return hosts;
+	}
+	
+	public static Pingable macToPingable(String mac, String ip, String nbt) {
 		
+		if (hosts.containsKey(mac))
+			return hosts.get(mac);
+		
+		/*Should be creating a new Pingable instead*/
+		throw new IllegalStateException("Passed in a nonexistant MAC");
+	}
+	
 }

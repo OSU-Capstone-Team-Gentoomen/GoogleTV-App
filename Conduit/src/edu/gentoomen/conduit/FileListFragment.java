@@ -3,6 +3,7 @@ package edu.gentoomen.conduit;
 import java.io.IOException;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.HttpStreamServer;
+import edu.gentoomen.conduit.networking.Pingable;
 import edu.gentoomen.utilities.Utils;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,7 +32,7 @@ public class FileListFragment extends ListFragment
 	private String selectedFile ="";
 	
 	public static HttpStreamServer server;
-	public static String selectedServer = null;
+	public static Pingable selectedServer = null;
 	
 	private static final String LOG_TAG = "FileListFragment";
 	private static SimpleCursorAdapter mAdapter;

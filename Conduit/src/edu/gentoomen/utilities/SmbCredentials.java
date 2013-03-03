@@ -22,15 +22,14 @@ public class SmbCredentials {
 	
 	private HashMap<String, UserPass> creds;
 	
-	public SmbCredentials() {
-		
-		creds = new HashMap<String, UserPass>();
-		
+	public SmbCredentials() {		
+		creds = new HashMap<String, UserPass>();		
 	}
 	
-	public boolean ipHasAuth(String ip) {
+	/*Can take either IP or NBT hostname, prefer NBT hostname since IPs can change*/
+	public boolean hostHasAuth(String host) {
 		
-		if (creds.size() == 0 || !creds.containsKey(ip))
+		if (creds.size() == 0 || !creds.containsKey(host))
 			return false;
 
 		return true;
@@ -38,14 +37,14 @@ public class SmbCredentials {
 	}
 	
 	//should be keying on mac when this is stored permanently
-	public void addCredentials(String ip, String user, String password) {		
-		creds.put(ip, new UserPass(user, password));
+	public void addCredentials(String mac, String user, String password) {		
+		creds.put(mac, new UserPass(user, password));
 	}
 	
-	public NtlmPasswordAuthentication getNtlmAuth(String ip) {
+	public NtlmPasswordAuthentication getNtlmAuth(String mac) {
 		
-		if (creds.size() != 0 && creds.containsKey(ip)) {
-			UserPass user = creds.get(ip);
+		if (creds.size() != 0 && creds.containsKey(mac)) {
+			UserPass user = creds.get(mac);
 			return new NtlmPasswordAuthentication("", user.user, user.pass);
 		}
 		else {

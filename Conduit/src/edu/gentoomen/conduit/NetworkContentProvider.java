@@ -42,6 +42,7 @@ public class NetworkContentProvider extends ContentProvider {
 	public static final String  COL_SAMBA = "hasSamba";
 	public static final String  COL_ONLINE = "isOnline";
 	public static final String  COL_NBTADR = "nbtAdr";
+	public static final String	COL_MAC = "macAddress";
 	
 	//Column Indexes
 	public static final int     IPADDR_COLUMN = 1;
@@ -74,7 +75,8 @@ public class NetworkContentProvider extends ContentProvider {
 	private static final String CREATE_TABLE_DEVICES = 
 			"create table "  + TABLE_DEVICES + " ("
 			+ ID             + " integer, "
-			+ COL_IP_ADDRESS + " text primary key,"
+			+ COL_IP_ADDRESS + " text not null,"
+			+ COL_MAC		 + " text primary key,"
 			+ COL_ONLINE     + " integer not null, " 
 			+ COL_SAMBA      + " integer not null, "
 			+ COL_NBTADR 	 + " text);"; 
@@ -220,8 +222,10 @@ public class NetworkContentProvider extends ContentProvider {
 		String[] avail = {
 				ID,
 				COL_IP_ADDRESS,
+				COL_MAC,
 				COL_ONLINE,
-				COL_SAMBA				
+				COL_SAMBA,
+				COL_NBTADR
 		};
 		
 		if(projection != null){
