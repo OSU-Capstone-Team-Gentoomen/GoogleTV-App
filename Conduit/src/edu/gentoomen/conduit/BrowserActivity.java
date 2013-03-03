@@ -30,6 +30,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.util.Log;
 
 public class BrowserActivity extends FragmentActivity 
@@ -247,11 +248,28 @@ public class BrowserActivity extends FragmentActivity
     }
     
     public void onBackPressed() {
+    	Log.d(LOG_TAG, "onBackPressed called");
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
-        if (!fileList.up()) {        
-            if (getCurrentFocus() == fileList.getListView()) {
-            	finish();
-            }
+        if (!fileList.up()) {
+        	
+        	/* confirm if the user really wants to exit */
+        	DialogInterface.OnClickListener exitDialog = new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					switch(which) {
+						case DialogInterface.BUTTON_POSITIVE:
+							finish();
+						case DialogInterface.BUTTON_NEGATIVE:
+							break;
+					}
+					
+				}
+			};
+			
+			AlertDialog.Builder builder = new AlertDialog.Builder(context);
+			builder.setMessage("Exit Conduit?").setPositiveButton("Yes", exitDialog)
+				.setNegativeButton("No", exitDialog).show();
         }
                 
     }
@@ -313,7 +331,7 @@ public class BrowserActivity extends FragmentActivity
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME, ActionBar.DISPLAY_SHOW_HOME);
         bar.setDisplayOptions(LeftNavBar.DISPLAY_AUTO_EXPAND, LeftNavBar.DISPLAY_AUTO_EXPAND);
-        bar.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);        
+        bar.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);
         
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
 
