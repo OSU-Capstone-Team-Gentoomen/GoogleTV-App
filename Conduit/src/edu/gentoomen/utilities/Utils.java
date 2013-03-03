@@ -26,6 +26,7 @@ public class Utils {
 						"avi 		video/x-msvideo " +
 						"ogv		video/ogg " +
 						"mov		video/quicktime " +
+						"ogm		video/ogg " +
 						"ogg		application/x-ogg ");
 		while (st.hasMoreTokens())
 			theMimeTypes.put(st.nextToken(), st.nextToken());
