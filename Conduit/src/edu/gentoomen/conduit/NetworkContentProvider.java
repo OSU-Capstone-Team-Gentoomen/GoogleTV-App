@@ -17,6 +17,11 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.util.Log;
 
+/*
+ * This class and AuthenticationContentProvider should be inheriting
+ * from a parent class to reduce code
+ */
+
 public class NetworkContentProvider extends ContentProvider {
 	
 	//Our database
@@ -157,7 +162,6 @@ public class NetworkContentProvider extends ContentProvider {
 			return true;
 		else
 			return false;
-		
 		
 	}
 	

@@ -1,6 +1,8 @@
 package edu.gentoomen.conduit;
 
 import android.app.Activity;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,8 +16,8 @@ public class PlayerActivity extends Activity {
 		
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-	    super.onCreate(savedInstanceState);
-	    
+	  
+		super.onCreate(savedInstanceState);	  	   
 	    Log.d(TAG, "in player activity class");
 	    Uri uri = Uri.parse(SrcPath);
 	    
@@ -25,13 +27,22 @@ public class PlayerActivity extends Activity {
 	    }
 	    
 	    Log.d(TAG, "valid URI " + uri);
-	    	    
+	    
 	    setContentView(R.layout.player_activity);
-	    VideoView myVideoView = (VideoView)findViewById(R.id.myvideoview);	    
+	    final VideoView myVideoView = (VideoView)findViewById(R.id.myvideoview);
+	    myVideoView.requestFocus();
 	    myVideoView.setVideoURI(uri);
 	    myVideoView.setMediaController(new MediaController(this));
-	    myVideoView.requestFocus();
-	    myVideoView.start();	    
+	    
+	    myVideoView.setOnPreparedListener(new OnPreparedListener() {
+			
+			@Override
+			public void onPrepared(MediaPlayer mp) {
+				BrowserActivity.getVideoProgressBar().cancel();
+				myVideoView.start();
+				
+			}
+		});
 	    
 	}
 	

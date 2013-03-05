@@ -26,7 +26,8 @@ import edu.gentoomen.utilities.Services;
 public class SambaDiscoveryAgent {
 
 	private static final String TAG = "Samba Disc";
-	private static final int	DEFAULT_TIMEOUT_MSEC = 1500;
+	private static final int	DEFAULT_TIMEOUT_MSEC = 1000;
+	private static final int	DEFAULT_NBTLOOKUP_TIMEOUT_MSEC = 2000;
 	private Map<String, String> nbtHosts;
 	
 	/*Set our ExecutorService to use only one thread for a background scan*/
@@ -127,7 +128,7 @@ public class SambaDiscoveryAgent {
 				Future<byte[]> result = executorService.submit(new GetNbtHostMac(s));
 								
 				try {
-					byte[] mac = result.get(DEFAULT_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
+					byte[] mac = result.get(DEFAULT_NBTLOOKUP_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
 					nbtHosts.put(bytesToHexString(mac), s.getName().substring(0, s.getName().length() - 1));
 					Log.d(TAG, "Mac found in workgroup: " + bytesToHexString(mac));
 				} catch (InterruptedException e) {					

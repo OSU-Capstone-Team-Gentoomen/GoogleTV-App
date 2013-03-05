@@ -220,7 +220,8 @@ public class FileListFragment extends ListFragment
     	
     }
     
-    public void clearAllFiles() {    	
+    public void clearAllFiles() {	
     	mAdapter.swapCursor(null);
+    	DeviceNavigator.setPath(null);
     }
 }

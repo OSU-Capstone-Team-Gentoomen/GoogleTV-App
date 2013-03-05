@@ -30,7 +30,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.PopupMenu;
 import android.util.Log;
 
 public class BrowserActivity extends FragmentActivity 
@@ -46,7 +45,8 @@ public class BrowserActivity extends FragmentActivity
 	private static SmbCredentials credentials;
 	private static Context 		  context;
 	private static DiscoveryAgent discoveryAgent;
-	private static ProgressDialog loaderCircle;
+	private static ProgressDialog scannerProgressBar;
+	private static ProgressDialog videoLoadingProgress;
 	private static boolean 		  initialScanCompleted = false;
 	
 	
@@ -117,7 +117,7 @@ public class BrowserActivity extends FragmentActivity
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
         	
     		ActionBar bar = getLeftNavBar();    		    		    
-    		loaderCircle.show();    		
+    		scannerProgressBar.show();    		
     		((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
     		
     		bar.removeAllTabs();
@@ -280,15 +280,20 @@ public class BrowserActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         
         context = this;
-        loaderCircle = new ProgressDialog(context);
-        loaderCircle.setCancelable(false);
-        loaderCircle.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        loaderCircle.setMessage("Analyzing your network, please wait");
+        scannerProgressBar = new ProgressDialog(context);
+        scannerProgressBar.setCancelable(false);
+        scannerProgressBar.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        scannerProgressBar.setMessage("Analyzing your network, please wait");
+        
+        videoLoadingProgress = new ProgressDialog(context);
+        videoLoadingProgress.setCancelable(true);
+        videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        videoLoadingProgress.setMessage("Loading...");
 
         
         if (!initialScanCompleted) {         	
             credentials = new SmbCredentials();            	       
-	        loaderCircle.show();	        
+	        scannerProgressBar.show();	        
 	        discoveryAgent = new DiscoveryAgent(this);        
 	        discoveryAgent.execute("");
 	        initialScanCompleted = true;
@@ -311,13 +316,11 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
     
-        switch (item.getItemId()) {        
-        case R.id.menu_exit:
-        	finish();
-        	break;        
+        switch (item.getItemId()) {      
         case R.id.device_logout:
         	((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
-        	credentials.removeCredential(FileListFragment.selectedServer.mac);
+        	if (FileListFragment.selectedServer != null)
+        		credentials.removeCredential(FileListFragment.selectedServer.mac);
         	break;        
         }
         return true;
@@ -358,8 +361,9 @@ public class BrowserActivity extends FragmentActivity
     		detailIntent.putExtra("fileName", id);
     	} else {
     		detailIntent = new Intent(this, PlayerActivity.class);
+    		videoLoadingProgress.show();
     	}
-    	    	
+    	
         startActivity(detailIntent);
         
     }
@@ -381,7 +385,11 @@ public class BrowserActivity extends FragmentActivity
     }
     
     public static ProgressDialog getLoaderCircle() {
-    	return loaderCircle;
+    	return scannerProgressBar;
+    }
+    
+    public static ProgressDialog getVideoProgressBar() {
+    	return videoLoadingProgress;
     }
     
 }
