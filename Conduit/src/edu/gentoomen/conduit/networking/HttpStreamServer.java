@@ -72,7 +72,7 @@ public class HttpStreamServer{
 	public HttpStreamServer(String path, String mimeType) throws IOException{
 
 		Log.d(TAG, "starting StreamOverHttp init");
-		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac));		
+		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac));
 		fileMimeType = mimeType;
 		serverSocket = new ServerSocket(HTTP_PORT);
 

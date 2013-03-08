@@ -2,6 +2,7 @@ package edu.gentoomen.conduit;
 
 import android.app.Activity;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
@@ -34,6 +35,14 @@ public class PlayerActivity extends Activity {
 	    myVideoView.setVideoURI(uri);
 	    myVideoView.setMediaController(new MediaController(this));
 	    
+	    myVideoView.setOnCompletionListener(new OnCompletionListener() {
+
+	    	@Override
+	    	public void onCompletion(MediaPlayer mp) {
+    			onDestroy();
+	    	}
+	    });
+	    
 	    myVideoView.setOnPreparedListener(new OnPreparedListener() {
 			
 			@Override
@@ -42,7 +51,7 @@ public class PlayerActivity extends Activity {
 				myVideoView.start();
 				
 			}
-		});
+		});	    	   
 	    
 	}
 	
@@ -51,4 +60,5 @@ public class PlayerActivity extends Activity {
 		super.onDestroy();		
 		FileListFragment.server.close();
 	}
+	
 }
