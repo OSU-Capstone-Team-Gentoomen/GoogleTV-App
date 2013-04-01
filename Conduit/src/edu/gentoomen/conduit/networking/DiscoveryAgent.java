@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import contentproviders.NetworkContentProvider;
+
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -17,7 +19,6 @@ import android.os.AsyncTask;
 import android.os.StrictMode;
 import android.util.Log;
 import edu.gentoomen.conduit.BrowserActivity;
-import edu.gentoomen.conduit.NetworkContentProvider;
 import edu.gentoomen.utilities.Services;
 
 /*

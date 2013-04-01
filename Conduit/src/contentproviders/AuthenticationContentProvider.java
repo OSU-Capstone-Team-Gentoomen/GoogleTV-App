@@ -1,7 +1,9 @@
-package edu.gentoomen.conduit;
+package contentproviders;
 
 import java.util.Arrays;
 import java.util.HashSet;
+
+import edu.gentoomen.utilities.DatabaseHelper;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -11,9 +13,7 @@ import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.net.Uri;
 import android.util.Log;
 
@@ -27,7 +27,7 @@ public class AuthenticationContentProvider extends ContentProvider {
 		private static SQLiteDatabase mDB;
 		
 		//Name of our table
-		public static final String  TABLE_DEVICES = "credentials";
+		public static final String  TABLE_CREDENTIALS = "credentials";
 		
 		//Constants to differentiate between different URIs
 		private static final int    CREDENTIAL = 666;
@@ -74,39 +74,39 @@ public class AuthenticationContentProvider extends ContentProvider {
 			
 		}
 
-		private static final String CREATE_TABLE_DEVICES = 
-				"create table "  + TABLE_DEVICES + " ("
+		private static final String CREATE_TABLE_CREDENTIALS = 
+				"create table "  + TABLE_CREDENTIALS + " ("
 				+ ID             + " integer, "				
 				+ COL_MAC		 + " text primary key,"
 				+ COL_SERVICE 	 + " text not null,"
 				+ COL_USER		 + " text not null,"
 				+ COL_PASSWORD	 + " text not null)";
 	
-		// Our DB helper class
-		private static class CredentialsDatabaseHelper extends SQLiteOpenHelper {
-
-			public CredentialsDatabaseHelper(Context context, String name, 
-					CursorFactory factory, int version) {
-				super(context, name, factory, version);		
-			}
-
-			@Override
-			public void onCreate(SQLiteDatabase db) {
-				db.execSQL(CREATE_TABLE_DEVICES);		
-			}
-
-			@Override
-			public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
-				Log.d(TAG, "Upgrading DB, [" + oldVersion + "] -> [" 
-						+ newVersion + "]");
-
-				db.execSQL("DROP TABLE IF EXISTS " + TABLE_DEVICES);
-				onCreate(db);	
-
-			}
-
-		}
+//		// Our DB helper class
+//		private static class CredentialsDatabaseHelper extends SQLiteOpenHelper {
+//
+//			public CredentialsDatabaseHelper(Context context, String name, 
+//					CursorFactory factory, int version) {
+//				super(context, name, factory, version);		
+//			}
+//
+//			@Override
+//			public void onCreate(SQLiteDatabase db) {
+//				db.execSQL(CREATE_TABLE_DEVICES);		
+//			}
+//
+//			@Override
+//			public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+//
+//				Log.d(TAG, "Upgrading DB, [" + oldVersion + "] -> [" 
+//						+ newVersion + "]");
+//
+//				db.execSQL("DROP TABLE IF EXISTS " + TABLE_DEVICES);
+//				onCreate(db);	
+//
+//			}
+//
+//		}
 		
 		
 	@Override
@@ -131,7 +131,7 @@ public class AuthenticationContentProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri inuri, ContentValues values) {
 		
-		long rowID = mDB.insert(TABLE_DEVICES, null, values);
+		long rowID = mDB.insert(TABLE_CREDENTIALS, null, values);
 		if(rowID > 0){
 			Uri uri = ContentUris.withAppendedId(CONTENT_URI, rowID);
 			getContext().getContentResolver().notifyChange(uri, null);
@@ -146,10 +146,9 @@ public class AuthenticationContentProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		
-		Context context = getContext();
-		context.deleteDatabase(DB_NAME);
-		CredentialsDatabaseHelper helper 
-			= new CredentialsDatabaseHelper(context, DB_NAME, null, DB_VERSION);
+		Context context = getContext();		
+		DatabaseHelper helper 
+			= new DatabaseHelper(context, DB_NAME, null, DB_VERSION, CREATE_TABLE_CREDENTIALS, TABLE_CREDENTIALS);
 		mDB = helper.getWritableDatabase();
 		
 		if(mDB == null)
@@ -164,7 +163,7 @@ public class AuthenticationContentProvider extends ContentProvider {
 		
 		//Use the sqlite query builder object to build our query
 		SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
-		queryBuilder.setTables(TABLE_DEVICES);
+		queryBuilder.setTables(TABLE_CREDENTIALS);
 
 		//Check if the caller has requested a nonexistant column
 		checkColumns(projection);
@@ -201,7 +200,7 @@ public class AuthenticationContentProvider extends ContentProvider {
 		
 		switch(mUriMatcher.match(uri)) {
 			case CREDENTIAL_ID:
-				rowsUpdated = mDB.update(TABLE_DEVICES, 
+				rowsUpdated = mDB.update(TABLE_CREDENTIALS, 
 										 values, 
 										 selection, 
 										 selectionArgs);

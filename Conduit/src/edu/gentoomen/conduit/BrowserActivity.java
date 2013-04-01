@@ -3,6 +3,8 @@ package edu.gentoomen.conduit;
 import java.util.ArrayList;
 
 import com.example.google.tv.leftnavbar.LeftNavBar;
+
+import contentproviders.NetworkContentProvider;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
 import edu.gentoomen.conduit.networking.Pingable;
@@ -65,10 +67,6 @@ public class BrowserActivity extends FragmentActivity
         NetworkContentProvider.COL_IP_ADDRESS,        
         NetworkContentProvider.COL_MAC,
         NetworkContentProvider.COL_NBTADR
-    };
-    
-    static final String[] SELECT_SAMBA = new String[] {
-    	NetworkContentProvider.COL_SAMBA + "=1"
     };
     
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {    	

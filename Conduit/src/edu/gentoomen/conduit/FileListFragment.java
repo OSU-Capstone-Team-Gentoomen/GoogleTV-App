@@ -1,6 +1,8 @@
 package edu.gentoomen.conduit;
 
 import java.io.IOException;
+
+import contentproviders.MediaContentProvider;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.HttpStreamServer;
 import edu.gentoomen.conduit.networking.Pingable;

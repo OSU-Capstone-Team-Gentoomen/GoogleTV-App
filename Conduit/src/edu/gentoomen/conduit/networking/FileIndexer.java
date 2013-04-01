@@ -1,6 +1,6 @@
 package edu.gentoomen.conduit.networking;
 
-import edu.gentoomen.conduit.MediaContentProvider;
+import contentproviders.MediaContentProvider;
 import jcifs.smb.SmbFile;
 import android.content.ContentValues;
 import android.os.AsyncTask;

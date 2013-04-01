@@ -418,16 +418,6 @@ public class HttpStreamServer{
 				e.printStackTrace();
 			}
 	}
-
-//	public static String getMimeType(String fileName) {
-//
-//		String mime;
-//		int extensionStart = fileName.lastIndexOf('.');
-//		Log.d(TAG, "extension found " + fileName.substring(extensionStart));
-//		mime = theMimeTypes.get(fileName.substring(extensionStart + 1).toLowerCase());
-//		return mime;
-//
-//	}
 	
 	public void setNewFile(String newFile, String mimeType) {
 
@@ -443,4 +433,9 @@ public class HttpStreamServer{
 			e.printStackTrace();
 		}
 	}
+	
+	public SmbFile getFile() {
+		return file;
+	}
+		
 }

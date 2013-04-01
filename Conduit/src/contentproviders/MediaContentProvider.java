@@ -1,10 +1,12 @@
-package edu.gentoomen.conduit;
+package contentproviders;
 
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
+import edu.gentoomen.conduit.BrowserActivity;
+import edu.gentoomen.conduit.FileListFragment;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import android.content.ContentProvider;
 import android.content.ContentValues;

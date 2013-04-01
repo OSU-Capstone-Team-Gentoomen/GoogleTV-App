@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import jcifs.netbios.NbtAddress;
+import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.util.Log;
@@ -30,7 +31,7 @@ public class SambaDiscoveryAgent {
 	private static final int	DEFAULT_NBTLOOKUP_TIMEOUT_MSEC = 2000;
 	private Map<String, String> nbtHosts;
 	
-	/*Set our ExecutorService to use only one thread for a background scan*/
+	/*Set our ExecutorService to use four threads for scan*/
 	private ExecutorService executorService = 
 			Executors.newFixedThreadPool(4);
 
@@ -123,7 +124,7 @@ public class SambaDiscoveryAgent {
 			return;
 		
 		try {
-			for (SmbFile s : new SmbFile("smb://Workgroup").listFiles()) {
+			for (SmbFile s : new SmbFile("smb://Workgroup", NtlmPasswordAuthentication.ANONYMOUS).listFiles()) {
 				Log.d(TAG, "found " + s.getName());
 				Future<byte[]> result = executorService.submit(new GetNbtHostMac(s));
 								
@@ -142,6 +143,8 @@ public class SambaDiscoveryAgent {
 								
 			}
 		} catch (SmbException e) {
+			Log.d(TAG, "Error scanning workgroup");
+			Log.d(TAG, e.getMessage());
 			e.printStackTrace();
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
