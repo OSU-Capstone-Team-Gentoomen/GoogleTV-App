@@ -72,7 +72,7 @@ public class HttpStreamServer{
 	public HttpStreamServer(String path, String mimeType) throws IOException{
 
 		Log.d(TAG, "starting StreamOverHttp init");
-		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer));		
+		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac));
 		fileMimeType = mimeType;
 		serverSocket = new ServerSocket(HTTP_PORT);
 
@@ -418,16 +418,6 @@ public class HttpStreamServer{
 				e.printStackTrace();
 			}
 	}
-
-//	public static String getMimeType(String fileName) {
-//
-//		String mime;
-//		int extensionStart = fileName.lastIndexOf('.');
-//		Log.d(TAG, "extension found " + fileName.substring(extensionStart));
-//		mime = theMimeTypes.get(fileName.substring(extensionStart + 1).toLowerCase());
-//		return mime;
-//
-//	}
 	
 	public void setNewFile(String newFile, String mimeType) {
 
@@ -435,7 +425,7 @@ public class HttpStreamServer{
 		SmbFile oldFile = file;
 		String oldmimeType = fileMimeType;
 		try {
-			file = new SmbFile("smb://" + newFile, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer));
+			file = new SmbFile("smb://" + newFile, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac));
 			fileMimeType = mimeType;
 		} catch (MalformedURLException e) {
 			file = oldFile;
@@ -443,4 +433,9 @@ public class HttpStreamServer{
 			e.printStackTrace();
 		}
 	}
+	
+	public SmbFile getFile() {
+		return file;
+	}
+		
 }

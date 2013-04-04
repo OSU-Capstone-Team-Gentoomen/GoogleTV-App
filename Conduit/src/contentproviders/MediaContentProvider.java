@@ -1,10 +1,12 @@
-package edu.gentoomen.conduit;
+package contentproviders;
 
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
+import edu.gentoomen.conduit.BrowserActivity;
+import edu.gentoomen.conduit.FileListFragment;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -91,7 +93,7 @@ public class MediaContentProvider extends ContentProvider {
 	public static boolean isRoot() {
 		
 		try {
-			return (new SmbFile("smb://" + DeviceNavigator.getPath(), BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer)).getParent().toString().equalsIgnoreCase("smb://"));
+			return (new SmbFile("smb://" + DeviceNavigator.getPath(), BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac)).getParent().toString().equalsIgnoreCase("smb://"));
 		} catch (MalformedURLException e) {
 			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.getPath());
 		}
@@ -107,7 +109,7 @@ public class MediaContentProvider extends ContentProvider {
 	public static boolean isRoot(String filePath) {
 		
 		try {
-			return (new SmbFile("smb://" + filePath, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer)).getParent().toString().equalsIgnoreCase("smb://"));
+			return (new SmbFile("smb://" + filePath, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac)).getParent().toString().equalsIgnoreCase("smb://"));
 		} catch (MalformedURLException e) {
 			Log.d(TAG, "MalformedURLException caught on checking for root on path " + DeviceNavigator.getPath());			
 		}

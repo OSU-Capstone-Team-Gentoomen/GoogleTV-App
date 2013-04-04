@@ -2,6 +2,7 @@ package edu.gentoomen.utilities;
 
 public enum Services {
 
-	Samba;
-	
+	Samba,
+	FTP,
+	DLNA;
 }

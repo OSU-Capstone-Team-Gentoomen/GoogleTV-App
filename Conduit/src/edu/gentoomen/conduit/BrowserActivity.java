@@ -3,8 +3,11 @@ package edu.gentoomen.conduit;
 import java.util.ArrayList;
 
 import com.example.google.tv.leftnavbar.LeftNavBar;
+
+import contentproviders.NetworkContentProvider;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
+import edu.gentoomen.conduit.networking.Pingable;
 import edu.gentoomen.utilities.SmbCredentials;
 import edu.gentoomen.utilities.Utils;
 
@@ -29,7 +32,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.util.Log;
 
 public class BrowserActivity extends FragmentActivity 
@@ -37,11 +39,17 @@ public class BrowserActivity extends FragmentActivity
 
 	public static final String LOG_TAG = "MainActivity";
 	
+	private static final int IPADDR_COL = 1;
+	private static final int MAC_ADDR_COL = 2;
+	private static final int NBT_COL = 3;
+	
 	private LeftNavBar mLeftNavBar;
 	private static SmbCredentials credentials;
-	private static Context context;
+	private static Context 		  context;
 	private static DiscoveryAgent discoveryAgent;
-	private static ProgressDialog loaderCircle;
+	private static ProgressDialog scannerProgressBar;
+	private static ProgressDialog videoLoadingProgress;
+	private static boolean 		  initialScanCompleted = false;
 	
 	
 	//List of image formats that the app supports. 
@@ -56,11 +64,9 @@ public class BrowserActivity extends FragmentActivity
     // These are the rows that we will retrieve.
     static final String[] SUMMARY_PROJECTION = new String[] {
         NetworkContentProvider.ID,
-        NetworkContentProvider.COL_IP_ADDRESS,
-    };
-    
-    static final String[] SELECT_SAMBA = new String[] {
-    	NetworkContentProvider.COL_SAMBA + "=1"
+        NetworkContentProvider.COL_IP_ADDRESS,        
+        NetworkContentProvider.COL_MAC,
+        NetworkContentProvider.COL_NBTADR
     };
     
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {    	
@@ -74,16 +80,31 @@ public class BrowserActivity extends FragmentActivity
     	bar.removeAllTabs();
     	
     	/*Add the refresh tab*/
-    	bar.addTab(bar.newTab().setText("Refresh").setTabListener(new RefreshTabListener()), false);
-    	
+    	bar.addTab(bar.newTab()
+			   .setText("Refresh")
+			   .setTabListener(new RefreshTabListener())
+			   .setIcon(R.drawable.refresh_normal), false);
+    	    	    
     	while (data.moveToNext()) {
+    		String title;
+    		String ip = data.getString(IPADDR_COL);
+    		String mac = data.getString(MAC_ADDR_COL);
+    		String nbtName = data.getString(NBT_COL);
+    		
+    		if (nbtName == null)
+    			title = ip;
+    		else
+    			title = nbtName;
+    		
+    		Log.d(LOG_TAG, "adding mac address " + mac + " to side bar");
+    		
 	        bar.addTab(bar.newTab()
-	    		.setText(data.getString(1))
-	    		.setTag(data.getString(1))
+	    		.setText(title)
+	    		.setTag(DiscoveryAgent.macToPingable(mac, ip, nbtName))
 	    		.setIcon(R.drawable.tab_d)
-	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);
+	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);	        	
     	}
-    	    	
+    	
     }
 
     public void onLoaderReset(Loader<Cursor> loader) {}
@@ -94,7 +115,7 @@ public class BrowserActivity extends FragmentActivity
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
         	
     		ActionBar bar = getLeftNavBar();    		    		    
-    		loaderCircle.show();    		
+    		scannerProgressBar.show();    		
     		((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
     		
     		bar.removeAllTabs();
@@ -106,9 +127,6 @@ public class BrowserActivity extends FragmentActivity
         	discoveryAgent.cancel(true);
     		discoveryAgent = new DiscoveryAgent(context);
     		discoveryAgent.execute("");
-    		
-    		/*Will no longer call this function once we key on mac addresses*/
-        	credentials.clearCredentials();
         	
         	onCreateLoader(0, null);
         	
@@ -132,20 +150,26 @@ public class BrowserActivity extends FragmentActivity
     		mTitle = title;
     		mFileList = fileList;
     	}
-    	
-    	@Override
-        public void onTabSelected(Tab tab, FragmentTransaction ft) {
+    	    	    	    
+    	@Override /*Function needs refactoring*/
+        public void onTabSelected(final Tab tab, FragmentTransaction ft) {    		    
     		
-    		Log.d(LOG_TAG, "tab selected " + tab.getTag() + " tab position: " + tab.getPosition());
-        	
-        	/*Check to ensure that the tag passed in is a valid IP address*/
-        	if (!tab.getTag().toString().matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
-        		return;        	
+    		try {
+    			
+    			Log.d(LOG_TAG, "tab selected " + ((Pingable)tab.getTag()).mac + " tab position: " + tab.getPosition());
+	        	/*Check to ensure that the tag passed in is a valid IP address*/
+	        	if (!((Pingable)tab.getTag()).ip.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
+	        		return;
 
-        	FileListFragment.selectedServer = (String) tab.getTag();
+    		} catch (Exception e) {
+    			Log.d(LOG_TAG, "Invalid tab selected");
+    			return;
+    		}
+    		
+        	FileListFragment.selectedServer = ((Pingable)tab.getTag());
         	
-        	if (credentials.ipHasAuth(FileListFragment.selectedServer)) {
-        		Log.d(LOG_TAG, "ip address authentication exists");
+        	if (credentials.hostHasAuth(FileListFragment.selectedServer.mac)) {
+        		Log.d(LOG_TAG, "host address authentication exists");
         		loginToShare();
         		return;
         	}
@@ -164,7 +188,7 @@ public class BrowserActivity extends FragmentActivity
     				String password = ((EditText)view.findViewById(R.id.password)).getText().toString();
     				
     				if(!username.isEmpty() && !password.isEmpty()) {
-    					credentials.addCredentials(FileListFragment.selectedServer, username, password);
+    					credentials.addCredentials(((Pingable) tab.getTag()).mac, username, password);
     					loginToShare();
     				}
     				
@@ -185,7 +209,7 @@ public class BrowserActivity extends FragmentActivity
     			@Override
     			public void onClick(DialogInterface dialog, int which) {    				
     				
-    				credentials.addCredentials(FileListFragment.selectedServer, "guest", "");
+    				credentials.addCredentials(FileListFragment.selectedServer.mac, "guest", "");
     				loginToShare();
     	        	
     			}
@@ -206,8 +230,15 @@ public class BrowserActivity extends FragmentActivity
         
         private void loginToShare() {
     		
+        	String title;
+        	
+        	if (FileListFragment.selectedServer.nbtName != null)
+        		title = FileListFragment.selectedServer.nbtName;
+        	else
+        		title = FileListFragment.selectedServer.ip;
+        	
     		mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
-        	mFileList.setDevice(FileListFragment.selectedServer);        	
+        	mFileList.setDevice(title);        	
         	ActionBar bar = getLeftNavBar();
         	bar.setTitle(mTitle);
         	
@@ -215,11 +246,28 @@ public class BrowserActivity extends FragmentActivity
     }
     
     public void onBackPressed() {
+    	Log.d(LOG_TAG, "onBackPressed called");
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
-        if (!fileList.up()) {        
-            if (getCurrentFocus() == fileList.getListView()) {
-            	finish();
-            }
+        if (!fileList.up()) {
+        	
+        	/* confirm if the user really wants to exit */
+        	DialogInterface.OnClickListener exitDialog = new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					switch(which) {
+						case DialogInterface.BUTTON_POSITIVE:
+							finish();
+						case DialogInterface.BUTTON_NEGATIVE:
+							break;
+					}
+					
+				}
+			};
+			
+			AlertDialog.Builder builder = new AlertDialog.Builder(context);
+			builder.setMessage("Exit Conduit?").setPositiveButton("Yes", exitDialog)
+				.setNegativeButton("No", exitDialog).show();
         }
                 
     }
@@ -230,16 +278,24 @@ public class BrowserActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         
         context = this;
-        credentials = new SmbCredentials();
+        scannerProgressBar = new ProgressDialog(context);
+        scannerProgressBar.setCancelable(false);
+        scannerProgressBar.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        scannerProgressBar.setMessage("Analyzing your network, please wait");
         
-        loaderCircle = new ProgressDialog(context);
-        loaderCircle.setCancelable(false);
-        loaderCircle.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        loaderCircle.setMessage("Analyzing your network, please wait");
-        loaderCircle.show();
+        videoLoadingProgress = new ProgressDialog(context);
+        videoLoadingProgress.setCancelable(true);
+        videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        videoLoadingProgress.setMessage("Loading...");
+
         
-        discoveryAgent = new DiscoveryAgent(this);        
-        discoveryAgent.execute("");
+        if (!initialScanCompleted) {         	
+            credentials = new SmbCredentials();            	       
+	        scannerProgressBar.show();	        
+	        discoveryAgent = new DiscoveryAgent(this);        
+	        discoveryAgent.execute("");
+	        initialScanCompleted = true;
+        }
         
         setContentView(R.layout.browser_activity);
         setupBar();
@@ -258,13 +314,11 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
     
-        switch (item.getItemId()) {        
-        case R.id.menu_exit:
-        	finish();
-        	break;        
+        switch (item.getItemId()) {      
         case R.id.device_logout:
         	((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
-        	credentials.removeCredential(FileListFragment.selectedServer);
+        	if (FileListFragment.selectedServer != null)
+        		credentials.removeCredential(FileListFragment.selectedServer.mac);
         	break;        
         }
         return true;
@@ -274,11 +328,11 @@ public class BrowserActivity extends FragmentActivity
     	
         ActionBar bar = getLeftNavBar();
         
-        bar.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+        bar.setBackgroundDrawable(new ColorDrawable(Color.BLACK));        
         bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME, ActionBar.DISPLAY_SHOW_HOME);
         bar.setDisplayOptions(LeftNavBar.DISPLAY_AUTO_EXPAND, LeftNavBar.DISPLAY_AUTO_EXPAND);
-        bar.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);        
+        bar.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);
         
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
 
@@ -305,12 +359,13 @@ public class BrowserActivity extends FragmentActivity
     		detailIntent.putExtra("fileName", id);
     	} else {
     		detailIntent = new Intent(this, PlayerActivity.class);
+    		videoLoadingProgress.show();
     	}
-    	    	
+    	
         startActivity(detailIntent);
         
     }
-
+    
     @Override
     public void onPathChanged(String path) {
     	ActionBar bar = getLeftNavBar();
@@ -328,7 +383,11 @@ public class BrowserActivity extends FragmentActivity
     }
     
     public static ProgressDialog getLoaderCircle() {
-    	return loaderCircle;
+    	return scannerProgressBar;
+    }
+    
+    public static ProgressDialog getVideoProgressBar() {
+    	return videoLoadingProgress;
     }
     
 }
