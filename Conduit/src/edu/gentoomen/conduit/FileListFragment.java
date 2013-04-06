@@ -28,11 +28,13 @@ public class FileListFragment extends ListFragment
 	public static final int TYPE_FOLDER = 0;
 	public static final int TYPE_FILE = 1;
 	
+  // TODO move to MediaContentProvider
 	private static final int FILE_NAME_INDEX = 2;
 	private static final int FILE_CONTENT_TYPE = 3;
 	
 	private String selectedFile ="";
 	
+  // TODO get rid of these
 	public static HttpStreamServer server;
 	public static Pingable selectedServer = null;
 	
@@ -78,6 +80,7 @@ public class FileListFragment extends ListFragment
     	       textView.setCompoundDrawablePadding(10);
     		   if (columnIndex == 3) {
     	    	   int type = cursor.getInt(columnIndex);
+               // TODO make this more readable
     	    	   if (type == MediaContentProvider.MEDIA) {
     	    		   textView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.video, 0, 0, 0);
     	    	   } else if (type == MediaContentProvider.FOLDER) {
@@ -95,6 +98,7 @@ public class FileListFragment extends ListFragment
         getListView().setItemsCanFocus(true);
     }
 
+    // TODO comment this
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -122,6 +126,7 @@ public class FileListFragment extends ListFragment
         case MediaContentProvider.MEDIA:
         	
         	Log.d(LOG_TAG, "clicked on " + fileName);
+          // TODO moves to MediaActivity class
         	try {
         		server = new HttpStreamServer(DeviceNavigator.getPath() + fileName, Utils.getMimeType(fileName));
 			} catch (IOException e) {				
@@ -131,6 +136,7 @@ public class FileListFragment extends ListFragment
         	mCallbacks.onFileSelected(i.getString(FILE_NAME_INDEX));
         	break;
         case MediaContentProvider.FOLDER:
+          // TODO bug here
         	setPath(i.getString(FILE_NAME_INDEX));
         	break;
         }
@@ -152,6 +158,7 @@ public class FileListFragment extends ListFragment
     	selectedFile = fileSelected;    	    	   
     	getLoaderManager().restartLoader(0, null, this);
     	Log.d(LOG_TAG, "Current path: " + DeviceNavigator.getPath());
+      // TODO remove DeviceNavigator here
     	mCallbacks.onPathChanged(DeviceNavigator.getPath());
     	
     }

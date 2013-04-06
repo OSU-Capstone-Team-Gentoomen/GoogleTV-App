@@ -18,6 +18,7 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.StrictMode;
 import android.util.Log;
+// TODO should be able to remove this
 import edu.gentoomen.conduit.BrowserActivity;
 import edu.gentoomen.utilities.Services;
 
@@ -26,9 +27,11 @@ import edu.gentoomen.utilities.Services;
  */
 public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
+  // TODO log() method
 	private static String				TAG = "DiscoveryAgent";
 	
 	/*Emulator settings*/
+  // TODO comment explaining why these are useful
 	private final String                EMU_IP_PREFIX = "192.168.1.";
 	private final int                   EMU_IP_LOW = 1;
 	private final int                   EMU_IP_HIGH = 254;	
@@ -68,8 +71,10 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	}
 	
 	public DiscoveryAgent(Context context) {		
+  // TODO possibly public DiscoveryAgent(ContentResolver, WifiManager) {
 		
-		Log.d(TAG, "Creating new Discovery Agent");		
+  // TODO find a way to get resolver without context
+  // TODO if statement not needed
 		if (resolver == null)
 			resolver = context.getContentResolver();
 
@@ -106,6 +111,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	@Override
 	public void onPostExecute(String results) {
 		
+    // TODO use callback class
 		ProgressDialog dialog = BrowserActivity.getLoaderCircle();
 		
 		if (dialog != null && dialog.isShowing())
@@ -175,6 +181,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		int[] gateway;
 		String ipPrefix;
 		
+    // TODO comment explaining why these are useful
 		if (EMU_MODE) {
 			start = EMU_IP_LOW;
 			end = EMU_IP_HIGH;
@@ -200,6 +207,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		}
 		
 		/*Check our ARP table for online hosts*/
+    // TODO maybe ArpScan doesn't need it's own thread
 		arp = new ArpScan();
 		arp.execute();
 		if (isCancelled()) {
@@ -209,6 +217,8 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 		
 		try {
 			arp.get();
+    // TODO log these
+    // TODO possibly rescan?
 		} catch (InterruptedException e) {		
 		} catch (ExecutionException e) {			
 		}			
