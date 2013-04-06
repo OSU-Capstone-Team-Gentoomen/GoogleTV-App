@@ -100,7 +100,6 @@ public class BrowserActivity extends FragmentActivity
 	    		.setIcon(R.drawable.tab_d)
           .setTabListener(new TabListener(title)), false);	        	
     	}
-    	
     }
 
     public void onLoaderReset(Loader<Cursor> loader) {}
@@ -121,24 +120,7 @@ public class BrowserActivity extends FragmentActivity
     	
     	@Override
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
-        	
-        // TODO shouldn't need this, DiscoveryAgent should handle
-        // clearing out the database if necessary
-    		fileList.clearAllFiles();
-    		
-        // TODO want a loader for tabs, like fileList
-        deviceList.reset();
-        	
-          // TODO encapsulate refresh logic in DiscoveryAgent
-          // e.g. discoveryAgent.refresh();
-        	DeviceContentProvider.clearDatabase();
-        	discoveryAgent.cancel(true);
-    		discoveryAgent = new DiscoveryAgent(this);
-    		discoveryAgent.execute("");
-        	
-          // TODO huh?
-        	onCreateLoader(0, null);
-        	
+          discoveryAgent.scan();
         }
 
         // TODO remove if unnecessary
@@ -261,7 +243,6 @@ public class BrowserActivity extends FragmentActivity
     }
     
     public void onBackPressed() {
-    	log("onBackPressed called");
         if (!fileList.up()) {
         	
         	/* confirm if the user really wants to exit */
@@ -312,7 +293,7 @@ public class BrowserActivity extends FragmentActivity
 	      ContentResolver resolver = this.getContentResolver();
 			  WifiManager wifiInfo = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
         discoveryAgent = new DiscoveryAgent(resolver, wifiInfo);
-        discoveryAgent.execute("");
+        discoveryAgent.scan();
         
         setContentView(R.layout.browser_activity);
 
@@ -360,22 +341,6 @@ public class BrowserActivity extends FragmentActivity
     	String fileType = Utils.getExtension(id);
     	Intent detailIntent;
     	
-<<<<<<< HEAD
-    	log(fileType);
-    	
-//    	if (Utils.supportedImageFormats.contains(fileType)) {
-//    		detailIntent = new Intent(this, ImageActivity.class);
-//    		detailIntent.putExtra("currentPath", DeviceNavigator.getPath());
-//    		detailIntent.putExtra("fileName", id);
-//    	} else {
-//    		detailIntent = new Intent(this, PlayerActivity.class);
-//        // TODO move to PlayerActivity
-//    		videoLoadingProgress.show();
-//    	}
-    	
-        //startActivity(detailIntent);
-        
-=======
     	if (supportedImageFormats.contains(fileType)) {
     		detailIntent = new Intent(this, ImageActivity.class);
     		detailIntent.putExtra("currentPath", DeviceNavigator.getPath());
@@ -387,7 +352,6 @@ public class BrowserActivity extends FragmentActivity
     	}
     	
       startActivity(detailIntent);
->>>>>>> refactoring device list and DiscoveryAgent comms
     }
     
     @Override
