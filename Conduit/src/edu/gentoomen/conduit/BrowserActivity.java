@@ -52,9 +52,6 @@ public class BrowserActivity extends FragmentActivity
   // TODO remove SmbCredentials
 	private static SmbCredentials credentials;
 
-  // TODO remove context, it's just an alias for "this"
-	private static Context 		  context;
-
 	private static DiscoveryAgent discoveryAgent;
 	private static ProgressDialog scannerProgressBar;
   // TODO move to PlayerActivity if possible
@@ -148,7 +145,7 @@ public class BrowserActivity extends FragmentActivity
           // e.g. discoveryAgent.refresh();
         	DeviceContentProvider.clearDatabase();
         	discoveryAgent.cancel(true);
-    		//discoveryAgent = new DiscoveryAgent(context.getContentResolver(), context.getSystemService(WIFI_SERVICE));
+    		discoveryAgent = new DiscoveryAgent(this);
     		discoveryAgent.execute("");
         	
         	onCreateLoader(0, null);
@@ -207,9 +204,9 @@ public class BrowserActivity extends FragmentActivity
         	
           // TODO define UI in XML
 
-        	AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        	AlertDialog.Builder builder = new AlertDialog.Builder(this);
         	builder.setTitle("Enter Username and Password");
-        	LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE); 
+        	LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE); 
         	final View view = inflater.inflate(R.layout.dialog_logon, null);
         	builder.setView(view);        	      
         	
@@ -304,7 +301,7 @@ public class BrowserActivity extends FragmentActivity
 			};
 			
       // TODO move to XML
-			AlertDialog.Builder builder = new AlertDialog.Builder(context);
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setMessage("Exit Conduit?").setPositiveButton("Yes", exitDialog)
 				.setNegativeButton("No", exitDialog).show();
         }
@@ -316,14 +313,13 @@ public class BrowserActivity extends FragmentActivity
     	
         super.onCreate(savedInstanceState);
         
-        context = this;
-        scannerProgressBar = new ProgressDialog(context);
+        scannerProgressBar = new ProgressDialog(this);
         scannerProgressBar.setCancelable(false);
         scannerProgressBar.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         scannerProgressBar.setMessage("Analyzing your network, please wait");
         
         // TODO move to PlayerActivity
-        videoLoadingProgress = new ProgressDialog(context);
+        videoLoadingProgress = new ProgressDialog(this);
         videoLoadingProgress.setCancelable(true);
         videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         videoLoadingProgress.setMessage("Loading...");
