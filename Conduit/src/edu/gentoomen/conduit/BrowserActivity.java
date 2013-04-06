@@ -37,21 +37,33 @@ import android.util.Log;
 public class BrowserActivity extends FragmentActivity 
 	implements FileListFragment.Callbacks, LoaderManager.LoaderCallbacks<Cursor> {
 
-	public static final String LOG_TAG = "MainActivity";
+  private void log(String message) {
+    Log.d("MainActivity", message);
+  }
 	
+  // TODO should be removed and replaced with constants defined in DeviceContentProvider
 	private static final int IPADDR_COL = 1;
 	private static final int MAC_ADDR_COL = 2;
 	private static final int NBT_COL = 3;
 	
+  // TODO rename to deviceList or something
 	private LeftNavBar mLeftNavBar;
+
+  // TODO remove SmbCredentials
 	private static SmbCredentials credentials;
+
+  // TODO remove context, it's just an alias for "this"
 	private static Context 		  context;
+
 	private static DiscoveryAgent discoveryAgent;
 	private static ProgressDialog scannerProgressBar;
+  // TODO move to PlayerActivity if possible
 	private static ProgressDialog videoLoadingProgress;
+  // TODO probably remove/move to DiscoveryAgent?
 	private static boolean 		  initialScanCompleted = false;
 	
 	
+  // TODO move into Utils
 	//List of image formats that the app supports. 
 	public static final ArrayList<String> supportedImageFormats = new ArrayList<String>();
 	static {
@@ -75,8 +87,13 @@ public class BrowserActivity extends FragmentActivity
 
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {        
     	
+      // TODO possibly subclass into device list specific ActionBar
     	ActionBar bar = getLeftNavBar();
+
+      // TODO move to class-wide variable
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
+
+      // TODO abstract concept of resetting device list
     	bar.removeAllTabs();
     	
     	/*Add the refresh tab*/
@@ -91,13 +108,15 @@ public class BrowserActivity extends FragmentActivity
     		String mac = data.getString(MAC_ADDR_COL);
     		String nbtName = data.getString(NBT_COL);
     		
+        // TODO move to content provider
     		if (nbtName == null)
     			title = ip;
     		else
     			title = nbtName;
     		
-    		Log.d(LOG_TAG, "adding mac address " + mac + " to side bar");
+    		log("adding mac address " + mac + " to side bar");
     		
+        // TODO abstract concept of adding a device tab
 	        bar.addTab(bar.newTab()
 	    		.setText(title)
 	    		.setTag(DiscoveryAgent.macToPingable(mac, ip, nbtName))
@@ -114,15 +133,25 @@ public class BrowserActivity extends FragmentActivity
     	@Override
         public void onTabSelected(Tab tab, FragmentTransaction ft) {
         	
+        // TODO will be removed by class-wide variable
     		ActionBar bar = getLeftNavBar();    		    		    
+
     		scannerProgressBar.show();    		
+
+        // TODO will be removed by class-wide variable
+        // TODO make sure to keep the clearAllFiles() call
+        // e.g. deviceList.clearAllFiles()
     		((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
     		
+        // TODO will be removed by DeviceListBar.reset()
     		bar.removeAllTabs();
         	
+        // TODO will be removed by DeviceListBar.reset()
         	/*Add the refresh tab*/
         	bar.addTab(bar.newTab().setText("Refresh").setTabListener(new RefreshTabListener()), false);
         	
+          // TODO encapsulate refresh logic in DiscoveryAgent
+          // e.g. discoveryAgent.refresh();
         	NetworkContentProvider.clearDatabase();
         	discoveryAgent.cancel(true);
     		discoveryAgent = new DiscoveryAgent(context);
@@ -132,6 +161,7 @@ public class BrowserActivity extends FragmentActivity
         	
         }
 
+        // TODO remove if unnecessary
         @Override
         public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
 
@@ -144,36 +174,45 @@ public class BrowserActivity extends FragmentActivity
     private class TabListener implements ActionBar.TabListener {
         	
     	private String mTitle;
+      // TODO will be removed by class-wide variable
     	private FileListFragment mFileList;
     	
+      // TODO update signature to remove fileList
     	public TabListener(FileListFragment fileList, String title, String path) {    		
     		mTitle = title;
+        // TODO will be removed by class-wide variable
     		mFileList = fileList;
     	}
     	    	    	    
     	@Override /*Function needs refactoring*/
         public void onTabSelected(final Tab tab, FragmentTransaction ft) {    		    
     		
+        // TODO try to remove this. related to Android auto-selecting invalid tab
     		try {
     			
-    			Log.d(LOG_TAG, "tab selected " + ((Pingable)tab.getTag()).mac + " tab position: " + tab.getPosition());
+    			log("tab selected " + ((Pingable)tab.getTag()).mac + " tab position: " + tab.getPosition());
 	        	/*Check to ensure that the tag passed in is a valid IP address*/
 	        	if (!((Pingable)tab.getTag()).ip.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
 	        		return;
 
     		} catch (Exception e) {
-    			Log.d(LOG_TAG, "Invalid tab selected");
+    			log("Invalid tab selected");
     			return;
     		}
     		
+        // TODO no!
         	FileListFragment.selectedServer = ((Pingable)tab.getTag());
         	
         	if (credentials.hostHasAuth(FileListFragment.selectedServer.mac)) {
-        		Log.d(LOG_TAG, "host address authentication exists");
+        		log("host address authentication exists");
         		loginToShare();
         		return;
         	}
+
+          // TODO UI button for login
         	
+          // TODO define UI in XML
+
         	AlertDialog.Builder builder = new AlertDialog.Builder(context);
         	builder.setTitle("Enter Username and Password");
         	LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE); 
@@ -191,6 +230,12 @@ public class BrowserActivity extends FragmentActivity
     					credentials.addCredentials(((Pingable) tab.getTag()).mac, username, password);
     					loginToShare();
     				}
+
+            try {
+                login(username, password)
+            } catch (LoginException) {
+              // TODO prompt user that password or credentials is incorrect
+            }
     				
     				return;
     				
@@ -204,6 +249,7 @@ public class BrowserActivity extends FragmentActivity
     			}
     		});
         	
+          // TODO remove log in as guest
         	builder.setNeutralButton("Login as Guest", new DialogInterface.OnClickListener() {
     			
     			@Override
@@ -219,11 +265,13 @@ public class BrowserActivity extends FragmentActivity
         	builder.show();
         }
 
+        // TODO remove if necessary
         @Override
         public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
 
         @Override
         public void onTabReselected(Tab tab, FragmentTransaction ft) {
+          // TODO remove
         	//mFileList.getListView().requestFocus();
         	onTabSelected(tab, ft);
         }
@@ -239,6 +287,7 @@ public class BrowserActivity extends FragmentActivity
         	
     		mFileList.setSelectedType(FileListFragment.TYPE_FOLDER);
         	mFileList.setDevice(title);        	
+          // TODO will be removed by class-wide variable
         	ActionBar bar = getLeftNavBar();
         	bar.setTitle(mTitle);
         	
@@ -246,7 +295,8 @@ public class BrowserActivity extends FragmentActivity
     }
     
     public void onBackPressed() {
-    	Log.d(LOG_TAG, "onBackPressed called");
+    	log("onBackPressed called");
+      // TODO will be removed by class-wide variable
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
         if (!fileList.up()) {
         	
@@ -265,6 +315,7 @@ public class BrowserActivity extends FragmentActivity
 				}
 			};
 			
+      // TODO move to XML
 			AlertDialog.Builder builder = new AlertDialog.Builder(context);
 			builder.setMessage("Exit Conduit?").setPositiveButton("Yes", exitDialog)
 				.setNegativeButton("No", exitDialog).show();
@@ -283,27 +334,34 @@ public class BrowserActivity extends FragmentActivity
         scannerProgressBar.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         scannerProgressBar.setMessage("Analyzing your network, please wait");
         
+        // TODO move to PlayerActivity
         videoLoadingProgress = new ProgressDialog(context);
         videoLoadingProgress.setCancelable(true);
         videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         videoLoadingProgress.setMessage("Loading...");
 
         
+        // TODO probably goes away
         if (!initialScanCompleted) {         	
             credentials = new SmbCredentials();            	       
+
+          // TODO don't forget keep this
 	        scannerProgressBar.show();	        
+
 	        discoveryAgent = new DiscoveryAgent(this);        
 	        discoveryAgent.execute("");
 	        initialScanCompleted = true;
         }
         
         setContentView(R.layout.browser_activity);
+        // TODO move to DeviceList constructor
         setupBar();
         
         getSupportLoaderManager().initLoader(0, null, this);
         
     }
     
+    // TODO removed by class-wide variable
     private LeftNavBar getLeftNavBar() {
         if (mLeftNavBar == null) {
             mLeftNavBar = new LeftNavBar(this);
@@ -314,8 +372,10 @@ public class BrowserActivity extends FragmentActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
     
+        // TODO unneeded switch statement?
         switch (item.getItemId()) {      
         case R.id.device_logout:
+          // TODO removed by class-wide variable
         	((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list)).clearAllFiles();
         	if (FileListFragment.selectedServer != null)
         		credentials.removeCredential(FileListFragment.selectedServer.mac);
@@ -324,6 +384,7 @@ public class BrowserActivity extends FragmentActivity
         return true;
     }
     
+    // TODO moves to DeviceList constructor
     private void setupBar() {
     	
         ActionBar bar = getLeftNavBar();
@@ -334,8 +395,10 @@ public class BrowserActivity extends FragmentActivity
         bar.setDisplayOptions(LeftNavBar.DISPLAY_AUTO_EXPAND, LeftNavBar.DISPLAY_AUTO_EXPAND);
         bar.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);
         
+      // TODO class-wide variable
     	FileListFragment fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
 
+        // TODO moves to DeviceList.reset()
         bar.addTab(bar.newTab()
     		.setText(R.string.tab_c)
     		.setTag(R.string.tab_c)
@@ -351,7 +414,7 @@ public class BrowserActivity extends FragmentActivity
     	String fileType = Utils.getExtension(id);
     	Intent detailIntent;
     	
-    	Log.d(LOG_TAG, fileType);
+    	log(fileType);
     	
     	if (supportedImageFormats.contains(fileType)) {
     		detailIntent = new Intent(this, ImageActivity.class);
@@ -359,6 +422,7 @@ public class BrowserActivity extends FragmentActivity
     		detailIntent.putExtra("fileName", id);
     	} else {
     		detailIntent = new Intent(this, PlayerActivity.class);
+        // TODO move to PlayerActivity
     		videoLoadingProgress.show();
     	}
     	
@@ -368,7 +432,9 @@ public class BrowserActivity extends FragmentActivity
     
     @Override
     public void onPathChanged(String path) {
+      // TODO go away!
     	ActionBar bar = getLeftNavBar();
+
     	bar.setSubtitle(path);
     }
     
@@ -378,6 +444,7 @@ public class BrowserActivity extends FragmentActivity
         return true;
     }
     
+    // TODO go away!
     public static SmbCredentials getCredentials() {
     	return credentials;
     }
@@ -386,6 +453,7 @@ public class BrowserActivity extends FragmentActivity
     	return scannerProgressBar;
     }
     
+    // TODO go away!
     public static ProgressDialog getVideoProgressBar() {
     	return videoLoadingProgress;
     }
