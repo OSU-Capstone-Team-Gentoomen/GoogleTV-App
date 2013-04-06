@@ -34,115 +34,121 @@ import android.view.View;
 import android.widget.EditText;
 import android.util.Log;
 
+public class BrowserActivity extends FragmentActivity implements
+		FileListFragment.Callbacks, LoaderManager.LoaderCallbacks<Cursor> {
 
-public class BrowserActivity extends FragmentActivity 
-	implements FileListFragment.Callbacks, LoaderManager.LoaderCallbacks<Cursor> {
-
-  private void log(String message) {
-    Log.d("MainActivity", message);
-  }
+	private void log(String message) {
+		Log.d("MainActivity", message);
+	}
 
 	private DeviceList deviceList;
-  private FileListFragment fileList;
+	private FileListFragment fileList;
 
-  // TODO remove SmbCredentials
+	// TODO remove SmbCredentials
 	private static SmbCredentials credentials;
 
 	private static DiscoveryAgent discoveryAgent;
 	private static ProgressDialog progressDialog;
-  // TODO move to PlayerActivity if possible
+	// TODO move to PlayerActivity if possible
 	private static ProgressDialog videoLoadingProgress;
-	
-	
-  // TODO move into Utils
-	//List of image formats that the app supports. 
-	
-	
+
+	// TODO move into Utils
+	// List of image formats that the app supports.
+	public static final ArrayList<String> supportedImageFormats = new ArrayList<String>();
+	static {
+		supportedImageFormats.add(".gif");
+		supportedImageFormats.add(".png");
+		supportedImageFormats.add(".jpg");
+		supportedImageFormats.add(".jpeg");
+	}
+
 	private static final int COL_IP_ADDRESS = 1;
 	private static final int COL_MAC = 2;
 	private static final int COL_NBT_ADDRESS = 3;
 
-    // These are the rows that we will retrieve.
-    static final String[] SUMMARY_PROJECTION = new String[] {
-        DeviceContentProvider.ID,
-        DeviceContentProvider.COL_IP_ADDRESS,        
-        DeviceContentProvider.COL_MAC,
-        DeviceContentProvider.COL_NBTADR
-    };
-    
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {    	
-        return new CursorLoader(this, DeviceContentProvider.CONTENT_URI, SUMMARY_PROJECTION, "", null, "");
-    }
+	// These are the rows that we will retrieve.
+	static final String[] SUMMARY_PROJECTION = new String[] {
+			NetworkContentProvider.ID, NetworkContentProvider.COL_IP_ADDRESS,
+			NetworkContentProvider.COL_MAC, NetworkContentProvider.COL_NBTADR };
 
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {        
-    	
-      deviceList.reset();
-    	
-    	while (data.moveToNext()) {
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		return new CursorLoader(this, NetworkContentProvider.CONTENT_URI,
+				SUMMARY_PROJECTION, "", null, "");
+	}
 
-    		String title;
-    		String ip = data.getString(COL_IP_ADDRESS);
-    		String mac = data.getString(COL_MAC);
-    		String nbtName = data.getString(COL_NBT_ADDRESS);
-    		
-        // TODO move to content provider
-    		if (nbtName == null)
-    			title = ip;
-    		else
-    			title = nbtName;
-    		
-    		log("Adding device to list: " + mac);
-    		
-        // TODO abstract concept of adding a device tab
-	        deviceList.addTab(deviceList.newTab()
-	    		.setText(title)
-	    		.setTag(DiscoveryAgent.macToPingable(mac))
-	    		.setIcon(R.drawable.tab_d)
-          .setTabListener(new TabListener(title)), false);	        	
-    	}
-    }
+	public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 
-    public void onLoaderReset(Loader<Cursor> loader) {}
-	
-    private class DiscoveryAgentListener implements DiscoveryAgent.ScanListener {
-      @Override
-      public void onScanStarted() {
-        progressDialog.show();	        
-      }
+		deviceList.reset();
 
-      @Override
-      public void onScanFinished() {
-        progressDialog.cancel();
-      }
-    }
+		while (data.moveToNext()) {
 
-    private class RefreshTabListener implements ActionBar.TabListener {
-    	
-    	@Override
-        public void onTabSelected(Tab tab, FragmentTransaction ft) {
-          discoveryAgent.scan();
-        }
+			String title;
+			String ip = data.getString(COL_IP_ADDRESS);
+			String mac = data.getString(COL_MAC);
+			String nbtName = data.getString(COL_NBT_ADDRESS);
 
-        // TODO remove if unnecessary
-        @Override
-        public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
+			// TODO move to content provider
+			if (nbtName == null)
+				title = ip;
+			else
+				title = nbtName;
 
-        @Override
-        public void onTabReselected(Tab tab, FragmentTransaction ft) {
-        	onTabReselected(tab, ft);
-        }
-    }
-    
-    private class TabListener implements ActionBar.TabListener {
-        	
-    	private String mTitle;
-    	
-      // TODO update signature to remove fileList
-    	public TabListener(String title) {    		
-    		mTitle = title;
-    	}
-    	    	    	    
-    	@Override /*Function needs refactoring*/
+			log("Adding device to list: " + mac);
+
+			// TODO abstract concept of adding a device tab
+			deviceList.addTab(
+					deviceList
+							.newTab()
+							.setText(title)
+							.setTag(DiscoveryAgent.macToPingable(mac, ip,
+									nbtName)).setIcon(R.drawable.tab_d)
+							.setTabListener(new TabListener(title)), false);
+		}
+	}
+
+	public void onLoaderReset(Loader<Cursor> loader) {
+	}
+
+	private class DiscoveryAgentListener implements DiscoveryAgent.ScanListener {
+		@Override
+		public void onScanStarted() {
+			progressDialog.show();
+		}
+
+		@Override
+		public void onScanFinished() {
+			progressDialog.cancel();
+		}
+	}
+
+	private class RefreshTabListener implements ActionBar.TabListener {
+
+		@Override
+		public void onTabSelected(Tab tab, FragmentTransaction ft) {
+			discoveryAgent.scan();
+		}
+
+		// TODO remove if unnecessary
+		@Override
+		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+		}
+
+		@Override
+		public void onTabReselected(Tab tab, FragmentTransaction ft) {
+			onTabReselected(tab, ft);
+		}
+	}
+
+	private class TabListener implements ActionBar.TabListener {
+
+		private String mTitle;
+
+		// TODO update signature to remove fileList
+		public TabListener(String title) {
+			mTitle = title;
+		}
+
+		@Override /*Function needs refactoring*/
         public void onTabSelected(final Tab tab, FragmentTransaction ft) {    		    
     		
         // TODO try to remove this. related to Android auto-selecting invalid tab
@@ -217,156 +223,164 @@ public class BrowserActivity extends FragmentActivity
         	builder.show();
         }
 
-        // TODO remove if necessary
-        @Override
-        public void onTabUnselected(Tab tab, FragmentTransaction ft) {}
+		// TODO remove if necessary
+		@Override
+		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+		}
 
-        @Override
-        public void onTabReselected(Tab tab, FragmentTransaction ft) {
-        	onTabSelected(tab, ft);
-        }
-        
-        private void loginToShare() {
-    		
-        	String title;
-        	
-        	if (FileListFragment.selectedServer.nbtName != null)
-        		title = FileListFragment.selectedServer.nbtName;
-        	else
-        		title = FileListFragment.selectedServer.ip;
-        	
-    		fileList.setSelectedType(FileListFragment.TYPE_FOLDER);
-        	fileList.setDevice(title);        	
-         deviceList.setTitle(mTitle);
-        	
-    	}
-    }
-    
-    public void onBackPressed() {
-        if (!fileList.up()) {
-        	
-        	/* confirm if the user really wants to exit */
-        	DialogInterface.OnClickListener exitDialog = new DialogInterface.OnClickListener() {
-				
+		@Override
+		public void onTabReselected(Tab tab, FragmentTransaction ft) {
+			onTabSelected(tab, ft);
+		}
+
+		private void loginToShare() {
+
+			String title;
+
+			if (FileListFragment.selectedServer.nbtName != null)
+				title = FileListFragment.selectedServer.nbtName;
+			else
+				title = FileListFragment.selectedServer.ip;
+
+			fileList.setSelectedType(FileListFragment.TYPE_FOLDER);
+			fileList.setDevice(title);
+			deviceList.setTitle(mTitle);
+
+		}
+	}
+
+	public void onBackPressed() {
+		if (!fileList.up()) {
+
+			/* confirm if the user really wants to exit */
+			DialogInterface.OnClickListener exitDialog = new DialogInterface.OnClickListener() {
+
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					switch(which) {
-						case DialogInterface.BUTTON_POSITIVE:
-							finish();
-						case DialogInterface.BUTTON_NEGATIVE:
-							break;
+					switch (which) {
+					case DialogInterface.BUTTON_POSITIVE:
+						finish();
+					case DialogInterface.BUTTON_NEGATIVE:
+						break;
 					}
-					
+
 				}
 			};
-			
-      // TODO move to XML
+
+			// TODO move to XML
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setMessage("Exit Conduit?").setPositiveButton("Yes", exitDialog)
-				.setNegativeButton("No", exitDialog).show();
-        }
-                
-    }
-    
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-    	
-        super.onCreate(savedInstanceState);
-        
-        deviceList = new DeviceList(this);
-    	  fileList = ((FileListFragment) getSupportFragmentManager().findFragmentById(R.id.file_list));
+			builder.setMessage("Exit Conduit?")
+					.setPositiveButton("Yes", exitDialog)
+					.setNegativeButton("No", exitDialog).show();
+		}
 
-        progressDialog = new ProgressDialog(this);
-        progressDialog.setCancelable(false);
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        // TODO better message
-        progressDialog.setMessage("Analyzing your network, please wait");
-        
-        // TODO move to PlayerActivity
-        videoLoadingProgress = new ProgressDialog(this);
-        videoLoadingProgress.setCancelable(true);
-        videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        videoLoadingProgress.setMessage("Loading...");
+	}
 
-        credentials = new SmbCredentials();
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
 
-	      ContentResolver resolver = this.getContentResolver();
-			  WifiManager wifiInfo = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
-        discoveryAgent = new DiscoveryAgent(resolver, wifiInfo);
-        discoveryAgent.scan();
-        
-        setContentView(R.layout.browser_activity);
+		super.onCreate(savedInstanceState);
 
-        getSupportLoaderManager().initLoader(0, null, this);
-    }
-    
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-    
-        if (item.getItemId() == R.id.device_logout) {
-        	fileList.clearAllFiles();
+		deviceList = new DeviceList(this);
+		fileList = ((FileListFragment) getSupportFragmentManager()
+				.findFragmentById(R.id.file_list));
 
-          // TODO fix me
-        	if (FileListFragment.selectedServer != null)
-        		credentials.removeCredential(FileListFragment.selectedServer.mac);
-        }
-        return true;
-    }
-    
-    class DeviceList extends LeftNavBar {
-      public DeviceList(Context context) {
-        super(context);
+		progressDialog = new ProgressDialog(this);
+		progressDialog.setCancelable(false);
+		progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		// TODO better message
+		progressDialog.setMessage("Analyzing your network, please wait");
 
-        this.setBackgroundDrawable(new ColorDrawable(Color.BLACK));        
-        this.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-        this.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME, ActionBar.DISPLAY_SHOW_HOME);
-        this.setDisplayOptions(LeftNavBar.DISPLAY_AUTO_EXPAND, LeftNavBar.DISPLAY_AUTO_EXPAND);
-        this.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED, LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);
-        
-        this.reset();
-      }
+		// TODO move to PlayerActivity
+		videoLoadingProgress = new ProgressDialog(this);
+		videoLoadingProgress.setCancelable(true);
+		videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		videoLoadingProgress.setMessage("Loading...");
 
-      public reset() {
-    	  this.removeAllTabs();
-    	  bar.addTab(bar.newTab()
-			   .setText("Refresh")
-			   .setTabListener(new RefreshTabListener())
-			   .setIcon(R.drawable.refresh_normal), false);
-      }
-    }
-    
-    @Override
-    public void onFileSelected(String id) {
-    	
-    	String fileType = Utils.getExtension(id);
-    	Intent detailIntent;
-    	
-    	if (supportedImageFormats.contains(fileType)) {
-    		detailIntent = new Intent(this, ImageActivity.class);
-    		detailIntent.putExtra("currentPath", DeviceNavigator.getPath());
-    		detailIntent.putExtra("fileName", id);
-    	} else {
-    		detailIntent = new Intent(this, PlayerActivity.class);
-        // TODO move to PlayerActivity
-    		videoLoadingProgress.show();
-    	}
-    	
-      startActivity(detailIntent);
-    }
-    
-    @Override
-    public void onPathChanged(String path) {
-    	deviceList.setSubtitle(path);
-    }
-    
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.browser_activity, menu);
-        return true;
-    }
-    
-    // TODO go away!
-    public static SmbCredentials getCredentials() {
-    	return credentials;
-    }
+		credentials = new SmbCredentials();
+
+		ContentResolver resolver = this.getContentResolver();
+		WifiManager wifiInfo = (WifiManager) context
+				.getSystemService(Context.WIFI_SERVICE);
+		discoveryAgent = new DiscoveryAgent(resolver, wifiInfo);
+		discoveryAgent.scan();
+
+		setContentView(R.layout.browser_activity);
+
+		getSupportLoaderManager().initLoader(0, null, this);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+
+		if (item.getItemId() == R.id.device_logout) {
+			fileList.clearAllFiles();
+
+			// TODO fix me
+			if (FileListFragment.selectedServer != null)
+				credentials
+						.removeCredential(FileListFragment.selectedServer.mac);
+		}
+		return true;
+	}
+
+	class DeviceList extends LeftNavBar {
+		public DeviceList(Context context) {
+			super(context);
+
+			this.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+			this.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+			this.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME,
+					ActionBar.DISPLAY_SHOW_HOME);
+			this.setDisplayOptions(LeftNavBar.DISPLAY_AUTO_EXPAND,
+					LeftNavBar.DISPLAY_AUTO_EXPAND);
+			this.setDisplayOptions(LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED,
+					LeftNavBar.DISPLAY_USE_LOGO_WHEN_EXPANDED);
+
+			this.reset();
+		}
+
+		public reset() {
+			this.removeAllTabs();
+			bar.addTab(
+					bar.newTab().setText("Refresh")
+							.setTabListener(new RefreshTabListener())
+							.setIcon(R.drawable.refresh_normal), false);
+		}
+	}
+
+	@Override
+	public void onFileSelected(String id) {
+
+		String fileType = Utils.getExtension(id);
+		Intent detailIntent;
+
+		if (supportedImageFormats.contains(fileType)) {
+			detailIntent = new Intent(this, ImageActivity.class);
+			detailIntent.putExtra("currentPath", DeviceNavigator.getPath());
+			detailIntent.putExtra("fileName", id);
+		} else {
+			detailIntent = new Intent(this, PlayerActivity.class);
+			// TODO move to PlayerActivity
+			videoLoadingProgress.show();
+		}
+
+		startActivity(detailIntent);
+	}
+
+	@Override
+	public void onPathChanged(String path) {
+		deviceList.setSubtitle(path);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.browser_activity, menu);
+		return true;
+	}
+
+	// TODO go away!
+	public static SmbCredentials getCredentials() {
+		return credentials;
+	}
 }
