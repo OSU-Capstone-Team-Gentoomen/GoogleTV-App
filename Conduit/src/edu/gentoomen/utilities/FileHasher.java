@@ -16,62 +16,62 @@ import android.util.Log;
 public class FileHasher {
 
 	private static final String TAG = "FileHasher";
-	
+
 	public static String getMediaFileHash(InputStream is, long fileLength) {
-		
-		StringBuilder seed = new StringBuilder();		
+
+		StringBuilder seed = new StringBuilder();
 		byte[] buffer = new byte[8192];
-		
+
 		try {
-			
-			is.skip(fileLength/2);
+
+			is.skip(fileLength / 2);
 			is.read(buffer);
-			
+
 			String sampleMD5 = md5(buffer);
-			
+
 			if (sampleMD5 == null)
 				return null;
-			
+
 			seed.append(sampleMD5);
-			seed.append(fileLength);			
-			
-			Log.d(TAG, "md5 seed is: " + seed.toString());			
+			seed.append(fileLength);
+
+			Log.d(TAG, "md5 seed is: " + seed.toString());
 			return md5(seed.toString());
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
-			return null;			
+			return null;
 		}
-		
+
 	}
-	
+
 	private static String md5(String input) {
-		
+
 		String retVal = null;
-		
+
 		if (input == null)
 			return retVal;
-		
+
 		try {
 
 			MessageDigest hasher = MessageDigest.getInstance("MD5");
 			hasher.update(input.getBytes(), 0, input.length());
 			retVal = new BigInteger(1, hasher.digest()).toString(16);
-			
-		} catch (NoSuchAlgorithmException e) {			
+
+		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
-		
+
 		return retVal;
 	}
-	
+
 	private static String md5(byte[] input) {
-		
+
 		String retVal = null;
-		
+
 		if (input == null)
 			return retVal;
-		
+
 		try {
 			MessageDigest hasher = MessageDigest.getInstance("MD5");
 			hasher.update(input);
@@ -79,8 +79,8 @@ public class FileHasher {
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
-		
+
 		return retVal;
 	}
-	
+
 }
