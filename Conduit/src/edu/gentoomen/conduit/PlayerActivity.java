@@ -2,7 +2,7 @@ package edu.gentoomen.conduit;
 
 import java.io.IOException;
 
-import contentproviders.ResumeContentProvider;
+import edu.gentoomen.contentproviders.ResumeContentProvider;
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;

@@ -28,9 +28,9 @@ import jcifs.smb.SmbFileInputStream;
  * to clients that connect, this class is based off of
  * the NanoHTTPD source code
  */
-public class HttpStreamServer{
+public class HttpStreamServer {
 
-	private static final String TAG = "StreamOverHttp";	
+	private static final String TAG = "StreamOverHttp";
 	private static final String HTTP_BAD_REQUEST = "400 Bad Request";
 	private static final String HTTP_416 = "416 Range not satisfiable";
 	private static final String HTTP_INTERNAL_ERROR = "500 Internal Server Error";
@@ -38,55 +38,48 @@ public class HttpStreamServer{
 	private static final String HTTP_PARTIAL = "206 Partial Content";
 	private static final String HTTP_CLRF = "\r\n";
 
-	private static final int    HTTP_PORT = 8888;
+	private static final int HTTP_PORT = 8888;
 
-	private SmbFile      file;	
-	private String       fileMimeType;
+	private SmbFile file;
+	private String fileMimeType;
 	private ServerSocket serverSocket;
-	private Thread       listenThread;
+	private Thread listenThread;
 
 	private static Hashtable<String, String> theMimeTypes = new Hashtable<String, String>();
 	static {
-		StringTokenizer st = new StringTokenizer(					
-						"txt		text/plain "+
-						"gif		image/gif "+
-						"jpg		image/jpeg "+
-						"jpeg		image/jpeg "+
-						"png		image/png "+
-						"mp3		audio/mpeg "+
-						"m3u		audio/mpeg-url " +
-						"mp4		video/mp4 " +
-						"mkv		video/x-matroska " +
-						"avi 		video/x-msvideo " +
-						"ogv		video/ogg " +
-						"flv		video/x-flv " +
-						"mov		video/quicktime " +
-						"swf		application/x-shockwave-flash " +
-						"ogg		application/x-ogg "+
-						"class		application/octet-stream " );
+		StringTokenizer st = new StringTokenizer("txt		text/plain "
+				+ "gif		image/gif " + "jpg		image/jpeg " + "jpeg		image/jpeg "
+				+ "png		image/png " + "mp3		audio/mpeg "
+				+ "m3u		audio/mpeg-url " + "mp4		video/mp4 "
+				+ "mkv		video/x-matroska " + "avi 		video/x-msvideo "
+				+ "ogv		video/ogg " + "flv		video/x-flv "
+				+ "mov		video/quicktime "
+				+ "swf		application/x-shockwave-flash "
+				+ "ogg		application/x-ogg "
+				+ "class		application/octet-stream ");
 		while (st.hasMoreTokens())
 			theMimeTypes.put(st.nextToken(), st.nextToken());
 	}
 
-
-	public HttpStreamServer(String path, String mimeType) throws IOException{
+	public HttpStreamServer(String path, String mimeType) throws IOException {
 
 		Log.d(TAG, "starting StreamOverHttp init");
-		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac));
+		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials()
+				.getNtlmAuth(FileListFragment.selectedServer.mac));
 		fileMimeType = mimeType;
 		serverSocket = new ServerSocket(HTTP_PORT);
 
-		listenThread = new Thread(new Runnable(){
+		listenThread = new Thread(new Runnable() {
 			@Override
-			public void run(){
-				try{
+			public void run() {
+				try {
 					while (true) {
 						Log.d(TAG, "Waiting for connection");
 						Socket accept = serverSocket.accept();
 						Log.d(TAG, "Connection accepted");
 						new HttpSession(accept);
 					}
-				}catch(IOException e){
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
@@ -105,7 +98,7 @@ public class HttpStreamServer{
 		private final Socket clientSocket;
 		private byte[] buf;
 
-		HttpSession(Socket socket){
+		HttpSession(Socket socket) {
 
 			clientSocket = socket;
 			buf = new byte[8192];
@@ -116,13 +109,13 @@ public class HttpStreamServer{
 		}
 
 		@Override
-		public void run(){
+		public void run() {
 
 			try {
 				smbFileInputStream = new SmbFileInputStream(file);
-			} catch (SmbException e1) {				
+			} catch (SmbException e1) {
 				e1.printStackTrace();
-			} catch (MalformedURLException e1) {				
+			} catch (MalformedURLException e1) {
 				e1.printStackTrace();
 			} catch (UnknownHostException e1) {
 				e1.printStackTrace();
@@ -130,22 +123,22 @@ public class HttpStreamServer{
 			handleResponse();
 
 			/*
-			 * By not closing the stream, mp3s work from some reason...?
-			 * Should be garbage collected, though this is still			 
-			 * bad practice
+			 * By not closing the stream, mp3s work from some reason...? Should
+			 * be garbage collected, though this is still bad practice
 			 * 
 			 * Will need to investigate
 			 */
-//			if (smbFileInputStream != null) {
-//				try{
-//					smbFileInputStream.close();
-//				}catch(IOException e){
-//					e.printStackTrace();
-//				}            
-//			}
-		}     
+			// if (smbFileInputStream != null) {
+			// try{
+			// smbFileInputStream.close();
+			// }catch(IOException e){
+			// e.printStackTrace();
+			// }
+			// }
+		}
 
-		private Properties readHeader(InputStream clientStream) throws InterruptedException, IOException {
+		private Properties readHeader(InputStream clientStream)
+				throws InterruptedException, IOException {
 
 			int retLen = clientStream.read(buf, 0, buf.length);
 
@@ -156,19 +149,21 @@ public class HttpStreamServer{
 			BufferedReader hin = new BufferedReader(new InputStreamReader(hbis));
 			Properties clientHeaders = new Properties();
 
-			if(!decodeHeader(hin, clientHeaders))
+			if (!decodeHeader(hin, clientHeaders))
 				return null;
 
 			return clientHeaders;
 		}
 
-		private ReturnHeader constructReturnHeader(Properties clientHeader) throws InterruptedException, IOException {
+		private ReturnHeader constructReturnHeader(Properties clientHeader)
+				throws InterruptedException, IOException {
 
 			String range = clientHeader.getProperty("range");
 			Properties responseHeader = new Properties();
 
-			if(file.length()!=-1)
-				responseHeader.put("Content-Length", String.valueOf(file.length()));
+			if (file.length() != -1)
+				responseHeader.put("Content-Length",
+						String.valueOf(file.length()));
 
 			responseHeader.put("Accept-Ranges", "bytes");
 
@@ -177,7 +172,7 @@ public class HttpStreamServer{
 
 			if (range == null) {
 				status = HTTP_OK;
-				sendCount = (int)file.length();
+				sendCount = (int) file.length();
 			} else {
 				if (!range.startsWith("bytes=")) {
 					sendError(HTTP_416, null);
@@ -195,43 +190,44 @@ public class HttpStreamServer{
 						startFrom = Long.parseLong(startRange);
 						String endRange = range.substring(hyphen + 1);
 						endAt = Long.parseLong(endRange);
-					} catch(NumberFormatException e) {
+					} catch (NumberFormatException e) {
 					}
 				}
 
 				if (startFrom >= file.length()) {
-					sendError(HTTP_416, null);					
+					sendError(HTTP_416, null);
 					return null;
 				}
 				if (endAt < 0)
 					endAt = file.length() - 1;
 
-				sendCount = (int)(endAt - startFrom + 1);
+				sendCount = (int) (endAt - startFrom + 1);
 
-				if(sendCount < 0)
+				if (sendCount < 0)
 					sendCount = 0;
 
 				status = HTTP_PARTIAL;
 				smbFileInputStream.skip(startFrom);
 
 				responseHeader.put("Content-Length", "" + sendCount);
-				String rangeSpec = "bytes " + startFrom + "-" + endAt + "/" + file.length();
+				String rangeSpec = "bytes " + startFrom + "-" + endAt + "/"
+						+ file.length();
 				responseHeader.put("Content-Range", rangeSpec);
 			}
 
-			ReturnHeader headerResponse = new ReturnHeader(responseHeader, sendCount, status);
+			ReturnHeader headerResponse = new ReturnHeader(responseHeader,
+					sendCount, status);
 			return headerResponse;
 
 		}
 
 		/*
-		 * This function will parse the header
-		 * and construct a response and send it to
-		 * the client with the binary data
+		 * This function will parse the header and construct a response and send
+		 * it to the client with the binary data
 		 */
-		private void handleResponse(){
+		private void handleResponse() {
 
-			try {			
+			try {
 				InputStream inS = clientSocket.getInputStream();
 
 				if (inS == null)
@@ -249,26 +245,32 @@ public class HttpStreamServer{
 					return;
 				}
 
-				sendResponse(response.status, fileMimeType, response.returnHeader, smbFileInputStream, response.sendCount, null);
+				sendResponse(response.status, fileMimeType,
+						response.returnHeader, smbFileInputStream,
+						response.sendCount, null);
 				inS.close();
 				Log.d(TAG, "stream finished");
 
-			} catch(IOException ioe) {				
-					ioe.printStackTrace();
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
 				try {
-					sendError(HTTP_INTERNAL_ERROR, "SERVER INTERNAL ERROR: IOException: " + ioe.getMessage());
-				} catch(Throwable t) {
+					sendError(
+							HTTP_INTERNAL_ERROR,
+							"SERVER INTERNAL ERROR: IOException: "
+									+ ioe.getMessage());
+				} catch (Throwable t) {
 				}
-			} catch(InterruptedException ie) {
-				/*Could not send the error, just exit*/				
+			} catch (InterruptedException ie) {
+				/* Could not send the error, just exit */
 				ie.printStackTrace();
-			}    	      	      	
+			}
 		}
 
-		private boolean decodeHeader(BufferedReader in, Properties clientHeader) throws InterruptedException{
+		private boolean decodeHeader(BufferedReader in, Properties clientHeader)
+				throws InterruptedException {
 
 			try {
-				/*Read in the line*/
+				/* Read in the line */
 				String inLine = in.readLine();
 
 				if (inLine == null)
@@ -276,24 +278,24 @@ public class HttpStreamServer{
 
 				StringTokenizer st = new StringTokenizer(inLine);
 
-				/*Sanity check, make sure we've got a header*/
+				/* Sanity check, make sure we've got a header */
 				if (!st.hasMoreTokens())
 					sendError(HTTP_BAD_REQUEST, "Syntax error");
 
 				String method = st.nextToken();
 
-				/*We only support GET methods*/
+				/* We only support GET methods */
 				if (!method.equals("GET"))
 					return false;
 
 				if (!st.hasMoreTokens())
 					sendError(HTTP_BAD_REQUEST, "Missing URI");
 
-				/*Now read the rest of the header*/
+				/* Now read the rest of the header */
 				while (true) {
 					String line = in.readLine();
 
-					if (line==null)
+					if (line == null)
 						break;
 
 					int colon = line.indexOf(':');
@@ -301,26 +303,34 @@ public class HttpStreamServer{
 					if (colon < 0)
 						continue;
 
-					/*Put our header into the properties object*/
+					/* Put our header into the properties object */
 					String atr = line.substring(0, colon).trim().toLowerCase();
 					String val = line.substring(colon + 1).trim();
 					clientHeader.put(atr, val);
 				}
-			} catch(IOException ioe) {
-				sendError(HTTP_INTERNAL_ERROR, "SERVER INTERNAL ERROR: IOException: " + ioe.getMessage());
+			} catch (IOException ioe) {
+				sendError(
+						HTTP_INTERNAL_ERROR,
+						"SERVER INTERNAL ERROR: IOException: "
+								+ ioe.getMessage());
 			}
 			return true;
 
 		}
 
-		/*Send a response along with binary data to the client, then close the socket*/
-		private void sendResponse(String status, String mimeType, Properties header, SmbFileInputStream smbInput, long sendCount, String errMsg){
+		/*
+		 * Send a response along with binary data to the client, then close the
+		 * socket
+		 */
+		private void sendResponse(String status, String mimeType,
+				Properties header, SmbFileInputStream smbInput, long sendCount,
+				String errMsg) {
 
 			try {
 				OutputStream out = clientSocket.getOutputStream();
 				PrintWriter writer = new PrintWriter(out);
 
-				/*Write out our header to the client stream*/
+				/* Write out our header to the client stream */
 				if (status != null) {
 					String retLine = "HTTP/1.0 " + status + HTTP_CLRF;
 					writer.print(retLine);
@@ -334,7 +344,7 @@ public class HttpStreamServer{
 				if (header != null) {
 					Enumeration<?> e = header.keys();
 					while (e.hasMoreElements()) {
-						String key = (String)e.nextElement();
+						String key = (String) e.nextElement();
 						String value = header.getProperty(key);
 						String l = key + ": " + value + HTTP_CLRF;
 						writer.print(l);
@@ -343,7 +353,7 @@ public class HttpStreamServer{
 				writer.print(HTTP_CLRF);
 				writer.flush();
 
-				/*Now write the binary data*/
+				/* Now write the binary data */
 				if (smbInput != null)
 					copyStream(smbInput, out, buf, sendCount);
 				else if (errMsg != null) {
@@ -353,39 +363,41 @@ public class HttpStreamServer{
 				out.flush();
 				out.close();
 
-			} catch(IOException e) {        
+			} catch (IOException e) {
 			} finally {
 				try {
 					clientSocket.close();
-					//smbInput.close();
-				} catch(Throwable t) {
+					// smbInput.close();
+				} catch (Throwable t) {
 				}
 			}
 		}
 
-		/*Send an HTTP error response*/
-		private void sendError(String status, String msg) throws InterruptedException{
+		/* Send an HTTP error response */
+		private void sendError(String status, String msg)
+				throws InterruptedException {
 
 			sendResponse(status, "text/plain", null, null, 0, msg);
 			throw new InterruptedException();
 
 		}
 
-		/*Do a byte copy to our output stream to the client*/
-		private void copyStream(SmbFileInputStream in, OutputStream out, byte[] tmpBuf, long maxSize) throws IOException{
+		/* Do a byte copy to our output stream to the client */
+		private void copyStream(SmbFileInputStream in, OutputStream out,
+				byte[] tmpBuf, long maxSize) throws IOException {
 
 			while (maxSize > 0) {
-				int count = (int)Math.min(maxSize, tmpBuf.length);
+				int count = (int) Math.min(maxSize, tmpBuf.length);
 				count = in.read(tmpBuf, 0, count);
-				if( count < 0 )
+				if (count < 0)
 					break;
 				out.write(tmpBuf, 0, count);
-				maxSize -= count;				
+				maxSize -= count;
 			}
 
 		}
 
-		/*Simple container class*/
+		/* Simple container class */
 		private class ReturnHeader {
 
 			Properties returnHeader = null;
@@ -402,30 +414,31 @@ public class HttpStreamServer{
 		}
 	}
 
-	public void close(){
-		
-			try {				
-				/*
-				 * Stop the listening thread NOW!
-				 * or else the listen thread will accept a connection
-				 * to a dead socket if the user selects a file
-				 * before the listen thread is stopped
-				 */				 
-				listenThread.interrupt();
-				serverSocket.close();
-				
-			} catch (IOException e) {				
-				e.printStackTrace();
-			}
+	public void close() {
+
+		try {
+			/*
+			 * Stop the listening thread NOW! or else the listen thread will
+			 * accept a connection to a dead socket if the user selects a file
+			 * before the listen thread is stopped
+			 */
+			listenThread.interrupt();
+			serverSocket.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
-	
+
 	public void setNewFile(String newFile, String mimeType) {
 
-		//Not a good solution, need to do some error handling higher up
+		// Not a good solution, need to do some error handling higher up
 		SmbFile oldFile = file;
 		String oldmimeType = fileMimeType;
 		try {
-			file = new SmbFile("smb://" + newFile, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac));
+			file = new SmbFile("smb://" + newFile, BrowserActivity
+					.getCredentials().getNtlmAuth(
+							FileListFragment.selectedServer.mac));
 			fileMimeType = mimeType;
 		} catch (MalformedURLException e) {
 			file = oldFile;
@@ -433,9 +446,9 @@ public class HttpStreamServer{
 			e.printStackTrace();
 		}
 	}
-	
+
 	public SmbFile getFile() {
 		return file;
 	}
-		
+
 }

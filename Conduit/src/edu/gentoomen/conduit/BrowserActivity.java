@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 import com.example.google.tv.leftnavbar.LeftNavBar;
 
-import contentproviders.NetworkContentProvider;
+import edu.gentoomen.contentproviders.DeviceContentProvider;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
-import edu.gentoomen.conduit.networking.Pingable;
+import edu.gentoomen.conduit.networking.Device;
 import edu.gentoomen.utilities.SmbCredentials;
 import edu.gentoomen.utilities.Utils;
 
@@ -65,24 +65,18 @@ public class BrowserActivity extends FragmentActivity
 	
   // TODO move into Utils
 	//List of image formats that the app supports. 
-	public static final ArrayList<String> supportedImageFormats = new ArrayList<String>();
-	static {
-		supportedImageFormats.add(".gif");
-		supportedImageFormats.add(".png");
-		supportedImageFormats.add(".jpg");
-		supportedImageFormats.add(".jpeg");
-	}
+	
 	
     // These are the rows that we will retrieve.
     static final String[] SUMMARY_PROJECTION = new String[] {
-        NetworkContentProvider.ID,
-        NetworkContentProvider.COL_IP_ADDRESS,        
-        NetworkContentProvider.COL_MAC,
-        NetworkContentProvider.COL_NBTADR
+        DeviceContentProvider.ID,
+        DeviceContentProvider.COL_IP_ADDRESS,        
+        DeviceContentProvider.COL_MAC,
+        DeviceContentProvider.COL_NBTADR
     };
     
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {    	
-        return new CursorLoader(this, NetworkContentProvider.CONTENT_URI, SUMMARY_PROJECTION, "", null, "");
+        return new CursorLoader(this, DeviceContentProvider.CONTENT_URI, SUMMARY_PROJECTION, "", null, "");
     }
 
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {        
@@ -119,7 +113,7 @@ public class BrowserActivity extends FragmentActivity
         // TODO abstract concept of adding a device tab
 	        bar.addTab(bar.newTab()
 	    		.setText(title)
-	    		.setTag(DiscoveryAgent.macToPingable(mac, ip, nbtName))
+	    		.setTag(DiscoveryAgent.macToPingable(mac))
 	    		.setIcon(R.drawable.tab_d)
 	            .setTabListener(new TabListener(fileList, data.getString(1), "one")), false);	        	
     	}
@@ -152,9 +146,9 @@ public class BrowserActivity extends FragmentActivity
         	
           // TODO encapsulate refresh logic in DiscoveryAgent
           // e.g. discoveryAgent.refresh();
-        	NetworkContentProvider.clearDatabase();
+        	DeviceContentProvider.clearDatabase();
         	discoveryAgent.cancel(true);
-    		discoveryAgent = new DiscoveryAgent(context);
+    		//discoveryAgent = new DiscoveryAgent(context.getContentResolver(), context.getSystemService(WIFI_SERVICE));
     		discoveryAgent.execute("");
         	
         	onCreateLoader(0, null);
@@ -190,9 +184,9 @@ public class BrowserActivity extends FragmentActivity
         // TODO try to remove this. related to Android auto-selecting invalid tab
     		try {
     			
-    			log("tab selected " + ((Pingable)tab.getTag()).mac + " tab position: " + tab.getPosition());
+    			log("tab selected " + ((Device)tab.getTag()).mac + " tab position: " + tab.getPosition());
 	        	/*Check to ensure that the tag passed in is a valid IP address*/
-	        	if (!((Pingable)tab.getTag()).ip.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
+	        	if (!((Device)tab.getTag()).ip.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))
 	        		return;
 
     		} catch (Exception e) {
@@ -201,7 +195,7 @@ public class BrowserActivity extends FragmentActivity
     		}
     		
         // TODO no!
-        	FileListFragment.selectedServer = ((Pingable)tab.getTag());
+        	FileListFragment.selectedServer = ((Device)tab.getTag());
         	
         	if (credentials.hostHasAuth(FileListFragment.selectedServer.mac)) {
         		log("host address authentication exists");
@@ -227,15 +221,9 @@ public class BrowserActivity extends FragmentActivity
     				String password = ((EditText)view.findViewById(R.id.password)).getText().toString();
     				
     				if(!username.isEmpty() && !password.isEmpty()) {
-    					credentials.addCredentials(((Pingable) tab.getTag()).mac, username, password);
+    					credentials.addCredentials(((Device) tab.getTag()).mac, username, password);
     					loginToShare();
     				}
-
-            try {
-                login(username, password)
-            } catch (LoginException) {
-              // TODO prompt user that password or credentials is incorrect
-            }
     				
     				return;
     				
@@ -348,7 +336,7 @@ public class BrowserActivity extends FragmentActivity
           // TODO don't forget keep this
 	        scannerProgressBar.show();	        
 
-	        discoveryAgent = new DiscoveryAgent(this);        
+	        //discoveryAgent = new DiscoveryAgent(this);        
 	        discoveryAgent.execute("");
 	        initialScanCompleted = true;
         }
@@ -416,17 +404,17 @@ public class BrowserActivity extends FragmentActivity
     	
     	log(fileType);
     	
-    	if (supportedImageFormats.contains(fileType)) {
-    		detailIntent = new Intent(this, ImageActivity.class);
-    		detailIntent.putExtra("currentPath", DeviceNavigator.getPath());
-    		detailIntent.putExtra("fileName", id);
-    	} else {
-    		detailIntent = new Intent(this, PlayerActivity.class);
-        // TODO move to PlayerActivity
-    		videoLoadingProgress.show();
-    	}
+//    	if (Utils.supportedImageFormats.contains(fileType)) {
+//    		detailIntent = new Intent(this, ImageActivity.class);
+//    		detailIntent.putExtra("currentPath", DeviceNavigator.getPath());
+//    		detailIntent.putExtra("fileName", id);
+//    	} else {
+//    		detailIntent = new Intent(this, PlayerActivity.class);
+//        // TODO move to PlayerActivity
+//    		videoLoadingProgress.show();
+//    	}
     	
-        startActivity(detailIntent);
+        //startActivity(detailIntent);
         
     }
     

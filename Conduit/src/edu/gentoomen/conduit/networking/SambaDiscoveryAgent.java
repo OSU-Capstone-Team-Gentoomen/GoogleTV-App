@@ -16,8 +16,8 @@ import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.util.Log;
+import edu.gentoomen.utilities.NetworkUtils;
 import edu.gentoomen.utilities.Services;
-
 
 /*
  * This class will focus on samba discovery
@@ -27,16 +27,15 @@ import edu.gentoomen.utilities.Services;
 public class SambaDiscoveryAgent {
 
 	private static final String TAG = "Samba Disc";
-	private static final int	DEFAULT_TIMEOUT_MSEC = 1000;
-	private static final int	DEFAULT_NBTLOOKUP_TIMEOUT_MSEC = 2000;
+	private static final int DEFAULT_TIMEOUT_MSEC = 1000;
+	private static final int DEFAULT_NBTLOOKUP_TIMEOUT_MSEC = 2000;
 	private Map<String, String> nbtHosts;
-	
-	/*Set our ExecutorService to use four threads for scan*/
-	private ExecutorService executorService = 
-			Executors.newFixedThreadPool(4);
+
+	/* Set our ExecutorService to use four threads for scan */
+	private ExecutorService executorService = Executors.newFixedThreadPool(4);
 
 	protected SambaDiscoveryAgent() {
-		
+
 		nbtHosts = new HashMap<String, String>();
 		this.findNbtHosts();
 		this.initalSambaScan();
@@ -45,39 +44,42 @@ public class SambaDiscoveryAgent {
 
 	private void initalSambaScan() {
 
-		Map<String, Pingable> hosts = DiscoveryAgent.getHostSet();
+		Map<String, Device> hosts = DiscoveryAgent.getHostSet();
 
-		Log.d("Will-Debug","Starting initial scan");		
+		Log.d("Will-Debug", "Starting initial scan");
 		Log.d(TAG, "set size " + hosts.size());
 
-		for (Map.Entry<String, Pingable> entry : hosts.entrySet()) {
-			Pingable p = entry.getValue();
-			
+		for (Map.Entry<String, Device> entry : hosts.entrySet()) {
+			Device p = entry.getValue();
+
 			if (nbtHosts.containsKey(p.mac)) {
-				Log.d(TAG, "Found NBT name for share for mac: " + p.mac + " name: " + nbtHosts.get(p.mac));
+				Log.d(TAG, "Found NBT name for share for mac: " + p.mac
+						+ " name: " + nbtHosts.get(p.mac));
 				p.nbtName = nbtHosts.get(p.mac);
 				DiscoveryAgent.addNewHost(p, Services.Samba);
 				continue;
 			}
-			
-			Log.d(TAG, "checking " + p.addr.getHostAddress());								
-			Future<Boolean> result = executorService.submit(new CheckSamba(p.addr.getHostAddress()));
-			
+
+			Log.d(TAG, "checking " + p.addr.getHostAddress());
+			Future<Boolean> result = executorService.submit(new CheckSamba(
+					p.addr.getHostAddress()));
+
 			try {
-				//if(NbtAddress.getByName(p.addr.getHostAddress()).isActive()) {
 				if (result.get(DEFAULT_TIMEOUT_MSEC, TimeUnit.MILLISECONDS)) {
-					Log.d(TAG, "Found Samba Share at " + p.addr.getHostAddress() + " with mac " + p.mac);					
-					DiscoveryAgent.addNewHost(p, Services.Samba);					
+					Log.d(TAG,
+							"Found Samba Share at " + p.addr.getHostAddress()
+									+ " with mac " + p.mac);
+					DiscoveryAgent.addNewHost(p, Services.Samba);
 				} else {
 					Log.d(TAG, "No share at " + p.addr.getHostAddress());
-				}			
-			} catch (InterruptedException e) {			
+				}
+			} catch (InterruptedException e) {
 				e.printStackTrace();
-			} catch (ExecutionException e) {				
+			} catch (ExecutionException e) {
 				e.printStackTrace();
 			} catch (TimeoutException e) {
 				Log.d(TAG, "Samba check timed out!");
-				//e.printStackTrace();
+				// e.printStackTrace();
 			}
 		}
 
@@ -94,53 +96,61 @@ public class SambaDiscoveryAgent {
 		@Override
 		public Boolean call() throws Exception {
 
-			if (NbtAddress.getByName(ipAddress).isActive()) 
-				return true;			
+			if (NbtAddress.getByName(ipAddress).isActive())
+				return true;
 
 			return false;
 
 		}
 
 	}
-	
+
 	private class GetNbtHostMac implements Callable<byte[]> {
-		
+
 		private SmbFile nbtHost;
-		
+
 		public GetNbtHostMac(SmbFile host) {
 			nbtHost = host;
 		}
-		
+
 		@Override
 		public byte[] call() throws Exception {
-			return NbtAddress.getByName(nbtHost.getName().substring(0, nbtHost.getName().length() - 1)).getMacAddress();			
+			return NbtAddress.getByName(
+					nbtHost.getName().substring(0,
+							nbtHost.getName().length() - 1)).getMacAddress();
 		}
-		
+
 	}
 
 	private void findNbtHosts() {
 
 		if (nbtHosts == null)
 			return;
-		
+
 		try {
-			for (SmbFile s : new SmbFile("smb://Workgroup", NtlmPasswordAuthentication.ANONYMOUS).listFiles()) {
+			for (SmbFile s : new SmbFile("smb://Workgroup",
+					NtlmPasswordAuthentication.ANONYMOUS).listFiles()) {
 				Log.d(TAG, "found " + s.getName());
-				Future<byte[]> result = executorService.submit(new GetNbtHostMac(s));
-								
+				Future<byte[]> result = executorService
+						.submit(new GetNbtHostMac(s));
+
 				try {
-					byte[] mac = result.get(DEFAULT_NBTLOOKUP_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
-					nbtHosts.put(bytesToHexString(mac), s.getName().substring(0, s.getName().length() - 1));
-					Log.d(TAG, "Mac found in workgroup: " + bytesToHexString(mac));
-				} catch (InterruptedException e) {					
+					byte[] mac = result.get(DEFAULT_NBTLOOKUP_TIMEOUT_MSEC,
+							TimeUnit.MILLISECONDS);
+					nbtHosts.put(NetworkUtils.bytesToHexString(mac), s
+							.getName().substring(0, s.getName().length() - 1));
+					Log.d(TAG,
+							"Mac found in workgroup: "
+									+ NetworkUtils.bytesToHexString(mac));
+				} catch (InterruptedException e) {
 					e.printStackTrace();
 					continue;
-				} catch (ExecutionException e) {					
+				} catch (ExecutionException e) {
 					e.printStackTrace();
-				} catch (TimeoutException e) {					
+				} catch (TimeoutException e) {
 					e.printStackTrace();
-				}				
-								
+				}
+
 			}
 		} catch (SmbException e) {
 			Log.d(TAG, "Error scanning workgroup");
@@ -151,25 +161,5 @@ public class SambaDiscoveryAgent {
 		}
 
 	}
-	private static String bytesToHexString(byte[] bytes) {
 
-		StringBuilder retVal = new StringBuilder(); 
-		StringBuilder tmpString;
-
-		for (int i = 0; i < bytes.length; i++) {
-
-			tmpString = new StringBuilder();
-			tmpString.append(Integer.toHexString(0xFF & bytes[i]));
-
-			if (tmpString.length() == 1)
-				tmpString.insert(0, '0');
-
-			retVal.append(tmpString);
-
-			if (i != bytes.length - 1)
-				retVal.append(":");
-		}
-
-		return retVal.toString();
-	}
 }

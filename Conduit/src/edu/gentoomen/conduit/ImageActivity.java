@@ -43,9 +43,9 @@ public class ImageActivity extends Activity implements OnClickListener {
     	listOfPictures = new ArrayList<SmbFile>();
     	for (SmbFile f : folderLS) {    		
     		//if the file type is not in the list of supported file types, remove it from the list.
-    		if (BrowserActivity.supportedImageFormats.contains(Utils.getExtension(f.getName()))) {
-    			listOfPictures.add(f);
-    		}
+//    		if (BrowserActivity.supportedImageFormats.contains(Utils.getExtension(f.getName()))) {
+//    			listOfPictures.add(f);
+//    		}
     	}    	    
     	
     	MAX_IMAGE_COUNT  = listOfPictures.size();
