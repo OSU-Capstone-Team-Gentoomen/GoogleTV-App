@@ -100,8 +100,8 @@ public class BrowserActivity extends FragmentActivity implements
 					deviceList
 							.newTab()
 							.setText(title)
-							.setTag(DiscoveryAgent.macToPingable(mac, ip,
-									nbtName)).setIcon(R.drawable.tab_d)
+							.setTag(DiscoveryAgent.macToPingable(mac))
+              .setIcon(R.drawable.tab_d)
 							.setTabListener(new TabListener(title)), false);
 		}
 	}
