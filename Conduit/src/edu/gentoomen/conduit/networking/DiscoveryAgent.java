@@ -12,6 +12,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.DhcpInfo;
 import android.os.AsyncTask;
+import android.os.AsyncTask.Status;
 import android.os.StrictMode;
 import android.util.Log;
 import edu.gentoomen.utilities.NetworkUtils;
@@ -20,7 +21,7 @@ import edu.gentoomen.utilities.Services;
 /*
  * This class is used to discover file servers that can then be browsed
  */
-public class DiscoveryAgent extends AsyncTask<String, Void, String> {
+public class DiscoveryAgent {
 
 	private static String TAG = "DiscoveryAgent";
 
@@ -48,12 +49,14 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	/* Async scanning functions */
 	AsyncTask<String, Void, String> reachable;
 	AsyncTask<Void, Void, String> arp;
+	
+	/* the threaded scan task */
+	private static ScanTask scanTask;
 
 	private ScanListener callbacks;
 
-	interface ScanListener {
+	public interface ScanListener {
 		public void onScanStarted();
-
 		public void onScanFinished();
 	}
 
@@ -85,34 +88,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 	private void log(String message) {
 		Log.d(TAG, message);
 	}
-
-	/*
-	 * Function will perform network scan based off of the client's default
-	 * gateway and scan for samba shares
-	 */
-	public String doInBackground(String... params) {
-
-		callbacks.onScanStarted();
-
-		/* Do our scan for online hosts */
-		int[] range = NetworkUtils.getIpRange(info.gateway, info.netmask);
-		lowest = range[0];
-		highest = range[1];
-
-		findAvailHosts();
-
-		/* Look for samba shares from online hosts */
-		sAgent = new SambaDiscoveryAgent();
-
-		return "";
-
-	}
-
-	@Override
-	public void onPostExecute(String results) {
-		callbacks.onScanFinished();
-	}
-
+	
 	/* how many scanned IPs are stored in the database */
 	public int getScannedCount() {
 
@@ -176,7 +152,7 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 			reachable = new CheckReachable();
 			reachable.execute(ipPrefix + i, "15");
 			sleep(15);
-			if (isCancelled()) {
+			if (scanTask.isCancelled()) {
 				reachable.cancel(true);
 				return;
 			}
@@ -267,6 +243,49 @@ public class DiscoveryAgent extends AsyncTask<String, Void, String> {
 
 		/* Should be creating a new Pingable instead */
 		throw new IllegalStateException("Passed in a nonexistant MAC");
+	}
+
+	public void scan() {
+		
+		if (hosts.size() > 0)
+			hosts.clear();
+		
+		if (scanTask == null)
+			scanTask = new ScanTask();
+		else
+			if (scanTask.getStatus() == Status.RUNNING || scanTask.getStatus() == Status.PENDING)
+				scanTask.cancel(true);
+		
+		scanTask.execute("");
+	}
+	
+	private class ScanTask extends AsyncTask<String, Void, String> {
+		/*
+		 * Function will perform network scan based off of the client's default
+		 * gateway and scan for samba shares
+		 */
+		public String doInBackground(String... params) {
+
+			callbacks.onScanStarted();
+
+			/* Do our scan for online hosts */
+			int[] range = NetworkUtils.getIpRange(info.gateway, info.netmask);
+			lowest = range[0];
+			highest = range[1];
+
+			findAvailHosts();
+
+			/* Look for samba shares from online hosts */
+			sAgent = new SambaDiscoveryAgent();
+
+			return "";
+
+		}
+		
+		@Override
+		public void onPostExecute(String results) {
+			callbacks.onScanFinished();
+		}
 	}
 
 }

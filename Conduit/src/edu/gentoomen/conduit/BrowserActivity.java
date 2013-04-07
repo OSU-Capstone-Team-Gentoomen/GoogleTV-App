@@ -12,17 +12,21 @@ import edu.gentoomen.utilities.SmbCredentials;
 import edu.gentoomen.utilities.Utils;
 
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.app.ActionBar.Tab;
 import android.app.ProgressDialog;
 import android.support.v4.app.LoaderManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.DhcpInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.CursorLoader;
@@ -50,7 +54,7 @@ public class BrowserActivity extends FragmentActivity implements
 	private static DiscoveryAgent discoveryAgent;
 	private static ProgressDialog progressDialog;
 	// TODO move to PlayerActivity if possible
-	private static ProgressDialog videoLoadingProgress;
+	//private static ProgressDialog videoLoadingProgress;
 
 	// TODO move into Utils
 	// List of image formats that the app supports.
@@ -68,11 +72,11 @@ public class BrowserActivity extends FragmentActivity implements
 
 	// These are the rows that we will retrieve.
 	static final String[] SUMMARY_PROJECTION = new String[] {
-			NetworkContentProvider.ID, NetworkContentProvider.COL_IP_ADDRESS,
-			NetworkContentProvider.COL_MAC, NetworkContentProvider.COL_NBTADR };
+			DeviceContentProvider.ID, DeviceContentProvider.COL_IP_ADDRESS,
+			DeviceContentProvider.COL_MAC, DeviceContentProvider.COL_NBTADR };
 
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		return new CursorLoader(this, NetworkContentProvider.CONTENT_URI,
+		return new CursorLoader(this, DeviceContentProvider.CONTENT_URI,
 				SUMMARY_PROJECTION, "", null, "");
 	}
 
@@ -173,13 +177,13 @@ public class BrowserActivity extends FragmentActivity implements
         		return;
         	}
 
-          // TODO UI button for login
+        	// TODO UI button for login
         	
-          // TODO define UI in XML
+        	// TODO define UI in XML
 
-        	AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        	AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
         	builder.setTitle("Enter Username and Password");
-        	LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE); 
+        	LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE); 
         	final View view = inflater.inflate(R.layout.dialog_logon, null);
         	builder.setView(view);        	      
         	
@@ -292,17 +296,17 @@ public class BrowserActivity extends FragmentActivity implements
 		progressDialog.setMessage("Analyzing your network, please wait");
 
 		// TODO move to PlayerActivity
-		videoLoadingProgress = new ProgressDialog(this);
-		videoLoadingProgress.setCancelable(true);
-		videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		videoLoadingProgress.setMessage("Loading...");
+//		videoLoadingProgress = new ProgressDialog(this);
+//		videoLoadingProgress.setCancelable(true);
+//		videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+//		videoLoadingProgress.setMessage("Loading...");
 
 		credentials = new SmbCredentials();
 
 		ContentResolver resolver = this.getContentResolver();
-		WifiManager wifiInfo = (WifiManager) context
-				.getSystemService(Context.WIFI_SERVICE);
-		discoveryAgent = new DiscoveryAgent(resolver, wifiInfo);
+		DhcpInfo info = ((WifiManager) this
+				.getSystemService(Context.WIFI_SERVICE)).getDhcpInfo();
+		discoveryAgent = new DiscoveryAgent(resolver, info, new DiscoveryAgentListener());
 		discoveryAgent.scan();
 
 		setContentView(R.layout.browser_activity);
@@ -326,7 +330,7 @@ public class BrowserActivity extends FragmentActivity implements
 
 	class DeviceList extends LeftNavBar {
 		public DeviceList(Context context) {
-			super(context);
+			super((Activity) context);
 
 			this.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
 			this.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -340,10 +344,10 @@ public class BrowserActivity extends FragmentActivity implements
 			this.reset();
 		}
 
-		public reset() {
+		public void reset() {
 			this.removeAllTabs();
-			bar.addTab(
-					bar.newTab().setText("Refresh")
+			deviceList.addTab(
+					deviceList.newTab().setText("Refresh")
 							.setTabListener(new RefreshTabListener())
 							.setIcon(R.drawable.refresh_normal), false);
 		}
@@ -362,7 +366,7 @@ public class BrowserActivity extends FragmentActivity implements
 		} else {
 			detailIntent = new Intent(this, PlayerActivity.class);
 			// TODO move to PlayerActivity
-			videoLoadingProgress.show();
+			//videoLoadingProgress.show();
 		}
 
 		startActivity(detailIntent);

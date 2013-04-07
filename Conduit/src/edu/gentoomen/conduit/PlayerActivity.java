@@ -99,7 +99,7 @@ public class PlayerActivity extends Activity {
 					}										
 				}
 				
-				BrowserActivity.getVideoProgressBar().cancel();
+				//BrowserActivity.getVideoProgressBar().cancel();
 				myVideoView.start();
 				
 			}
@@ -113,8 +113,8 @@ public class PlayerActivity extends Activity {
 		super.onDestroy();
 		FileListFragment.server.close();
 		
-		if (BrowserActivity.getVideoProgressBar().isShowing())
-			BrowserActivity.getVideoProgressBar().cancel();
+//		if (BrowserActivity.getVideoProgressBar().isShowing())
+//			BrowserActivity.getVideoProgressBar().cancel();
 		
 	}	
 	
