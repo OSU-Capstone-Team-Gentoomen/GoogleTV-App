@@ -30,22 +30,22 @@
         </activity>
                
         <provider
-        	android:name="contentproviders.NetworkContentProvider"
-        	android:authorities="edu.gentoomen.conduit.networking"
+        	android:name=".contentproviders.DeviceContentProvider"
+        	android:authorities="edu.gentoomen.conduit.devices"
         	android:exported="false">
 		</provider>
 		<provider
-        	android:name="contentproviders.AuthenticationContentProvider"
-        	android:authorities="edu.gentoomen.conduit.networking"
+        	android:name=".contentproviders.AuthenticationContentProvider"
+        	android:authorities="edu.gentoomen.conduit.credentials"
         	android:exported="false">
 		</provider>
 		<provider
-        	android:name="contentproviders.ResumeContentProvider"
+        	android:name=".contentproviders.ResumeContentProvider"
         	android:authorities="edu.gentoomen.conduit.resume"
         	android:exported="false">
 		</provider>
 		<provider
-        	android:name="contentproviders.MediaContentProvider"
+        	android:name=".contentproviders.MediaContentProvider"
         	android:authorities="edu.gentoomen.conduit.media"
         	android:exported="false">
 		</provider>

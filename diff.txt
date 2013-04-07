@@ -1,0 +1,3 @@
+
+Viewing: 'master:Conduit/src/edu/gentoomen/conduit/BrowserActivity.java'
+Launch 'vimdiff' [Y/n]: 

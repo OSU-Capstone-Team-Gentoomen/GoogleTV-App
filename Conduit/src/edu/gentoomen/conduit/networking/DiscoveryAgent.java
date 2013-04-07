@@ -5,7 +5,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.gentoomen.contentproviders.DeviceContentProvider;
+import edu.gentoomen.conduit.contentproviders.DeviceContentProvider;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -49,7 +49,7 @@ public class DiscoveryAgent {
 	/* Async scanning functions */
 	AsyncTask<String, Void, String> reachable;
 	AsyncTask<Void, Void, String> arp;
-	
+
 	/* the threaded scan task */
 	private static ScanTask scanTask;
 
@@ -57,6 +57,7 @@ public class DiscoveryAgent {
 
 	public interface ScanListener {
 		public void onScanStarted();
+
 		public void onScanFinished();
 	}
 
@@ -88,7 +89,7 @@ public class DiscoveryAgent {
 	private void log(String message) {
 		Log.d(TAG, message);
 	}
-	
+
 	/* how many scanned IPs are stored in the database */
 	public int getScannedCount() {
 
@@ -241,32 +242,31 @@ public class DiscoveryAgent {
 		if (hosts.containsKey(mac))
 			return hosts.get(mac);
 
-		/* Should be creating a new Pingable instead */
+		/* Should be creating a new Device instead */
 		throw new IllegalStateException("Passed in a nonexistant MAC");
 	}
 
 	public void scan() {
-		
+
 		if (hosts.size() > 0)
 			hosts.clear();
-		
-		if (scanTask == null)
-			scanTask = new ScanTask();
-		else
-			if (scanTask.getStatus() == Status.RUNNING || scanTask.getStatus() == Status.PENDING)
-				scanTask.cancel(true);
-		
+
+		if (scanTask != null
+				&& (scanTask.getStatus() == Status.RUNNING || scanTask
+						.getStatus() == Status.PENDING))
+			scanTask.cancel(true);
+
+		scanTask = new ScanTask();
+		callbacks.onScanStarted();
 		scanTask.execute("");
 	}
-	
+
 	private class ScanTask extends AsyncTask<String, Void, String> {
 		/*
 		 * Function will perform network scan based off of the client's default
 		 * gateway and scan for samba shares
 		 */
 		public String doInBackground(String... params) {
-
-			callbacks.onScanStarted();
 
 			/* Do our scan for online hosts */
 			int[] range = NetworkUtils.getIpRange(info.gateway, info.netmask);
@@ -281,7 +281,7 @@ public class DiscoveryAgent {
 			return "";
 
 		}
-		
+
 		@Override
 		public void onPostExecute(String results) {
 			callbacks.onScanFinished();
