@@ -68,7 +68,8 @@ public class PlayerActivity extends Activity {
 			@Override
 			public void onPrepared(MediaPlayer mp) {
 
-				String projection[] = { ResumeContentProvider.COL_HASH,
+				String projection[] = { 
+						ResumeContentProvider.COL_HASH,
 						ResumeContentProvider.COL_NAME,
 						ResumeContentProvider.COL_PATH,
 						ResumeContentProvider.COL_TIME };

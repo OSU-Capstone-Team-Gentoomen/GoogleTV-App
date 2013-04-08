@@ -95,37 +95,8 @@ public class BrowserActivity extends FragmentActivity implements
 	public void onLoaderReset(Loader<Cursor> loader) {
 	}
 
-	private class DiscoveryAgentListener implements DiscoveryAgent.ScanListener {
-		@Override
-		public void onScanStarted() {
-			progressDialog.show();
-		}
-
-		@Override
-		public void onScanFinished() {
-			progressDialog.cancel();
-		}
-	}
-
-	private class RefreshTabListener implements ActionBar.TabListener {
-
-		@Override
-		public void onTabSelected(Tab tab, FragmentTransaction ft) {
-			discoveryAgent.scan();
-		}
-
-		// TODO remove if unnecessary
-		@Override
-		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
-		}
-
-		@Override
-		public void onTabReselected(Tab tab, FragmentTransaction ft) {
-			onTabReselected(tab, ft);
-		}
-	}
-
 	public void onBackPressed() {
+
 		if (!fileList.up()) {
 
 			/* confirm if the user really wants to exit */
@@ -186,8 +157,6 @@ public class BrowserActivity extends FragmentActivity implements
 		fileList = ((FileListFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.file_list));
 
-		if (fileList == null)
-			log("fragment not found");
 	}
 
 	@Override
@@ -292,6 +261,36 @@ public class BrowserActivity extends FragmentActivity implements
 			onTabSelected(tab, ft);
 		}
 
+	}
+
+	private class DiscoveryAgentListener implements DiscoveryAgent.ScanListener {
+		@Override
+		public void onScanStarted() {
+			progressDialog.show();
+		}
+
+		@Override
+		public void onScanFinished() {
+			progressDialog.cancel();
+		}
+	}
+
+	private class RefreshTabListener implements ActionBar.TabListener {
+
+		@Override
+		public void onTabSelected(Tab tab, FragmentTransaction ft) {
+			discoveryAgent.scan();
+		}
+
+		// TODO remove if unnecessary
+		@Override
+		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+		}
+
+		@Override
+		public void onTabReselected(Tab tab, FragmentTransaction ft) {
+			onTabReselected(tab, ft);
+		}
 	}
 
 	private class DeviceList extends LeftNavBar {

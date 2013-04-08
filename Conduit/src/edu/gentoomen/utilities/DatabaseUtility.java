@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import android.database.Cursor;
+import android.util.Log;
 
 public class DatabaseUtility {
 
@@ -17,6 +18,12 @@ public class DatabaseUtility {
 			HashSet<String> reqColumns = new HashSet<String>(
 					Arrays.asList(projection));
 
+			for(String s : availColumns)
+				Log.d("Debug", s);
+			
+			for(String s : reqColumns)
+				Log.d("Debug", s);
+			
 			/* Check if all columns that were requested are available */
 			if (!availColumns.containsAll(reqColumns))
 				throw new IllegalArgumentException(

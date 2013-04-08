@@ -23,41 +23,33 @@ import edu.gentoomen.utilities.Services;
  */
 public class DiscoveryAgent {
 
-	private static String TAG = "DiscoveryAgent";
-
-	/* Emulator settings */
-	// TODO comment explaining why these are useful
-	private final String EMU_IP_PREFIX = "192.168.1.";
-	private final int EMU_IP_LOW = 1;
-	private final int EMU_IP_HIGH = 254;
-	private final boolean EMU_MODE = false;
+	private static String 			   TAG = "DiscoveryAgent";
 
 	/* Static fields for this class */
-	private static ContentResolver resolver = null;
-
+	private static ContentResolver 	   resolver = null;
+	
 	@SuppressWarnings("unused")
-	private static SambaDiscoveryAgent sAgent = null;
+	private SambaDiscoveryAgent 	   sAgent = null;
 
 	/* Used to keep track of all online hosts */
 	private static Map<String, Device> hosts = new HashMap<String, Device>();
-	private DhcpInfo info = null;
+	private DhcpInfo 				   info = null;
 
 	/* The highest and lowest ip addresses in our subnet */
-	protected static int lowest = 0;
-	protected static int highest = 0;
+	protected int 					   lowest = 0;
+	protected int 					   highest = 0;
 
 	/* Async scanning functions */
-	AsyncTask<String, Void, String> reachable;
-	AsyncTask<Void, Void, String> arp;
+	AsyncTask<String, Void, String>    reachable;	
 
 	/* the threaded scan task */
-	private static ScanTask scanTask;
+	private ScanTask 		   		   scanTask;
 
-	private ScanListener callbacks;
+	/* Callbacks used to inform the front end of scan events */
+	private ScanListener 			   callbacks;
 
 	public interface ScanListener {
 		public void onScanStarted();
-
 		public void onScanFinished();
 	}
 
@@ -69,7 +61,6 @@ public class DiscoveryAgent {
 			.permitAll().build();
 
 	static {
-
 		/* Set our thread policy */
 		StrictMode.setThreadPolicy(policy);
 	}
@@ -84,10 +75,6 @@ public class DiscoveryAgent {
 		if (hosts.size() > 0) {
 			hosts.clear();
 		}
-	}
-
-	private void log(String message) {
-		Log.d(TAG, message);
 	}
 
 	/* how many scanned IPs are stored in the database */
@@ -123,56 +110,6 @@ public class DiscoveryAgent {
 				projection, DeviceContentProvider.COL_ONLINE + " = 1 AND "
 						+ DeviceContentProvider.COL_SAMBA + " = 1", null, null);
 		return c.getCount();
-
-	}
-
-	/* Scan the entire subnet to find all online hosts */
-	private void findAvailHosts() {
-
-		int start;
-		int end;
-		int[] gateway;
-		String ipPrefix;
-
-		// TODO comment explaining why these are useful
-		if (EMU_MODE) {
-			start = EMU_IP_LOW;
-			end = EMU_IP_HIGH;
-			ipPrefix = EMU_IP_PREFIX;
-		} else {
-			start = NetworkUtils.getOctets(lowest)[3];
-			end = NetworkUtils.getOctets(highest)[3];
-			gateway = NetworkUtils.getOctets(info.gateway);
-
-			/* Construct part of our ip address */
-			ipPrefix = gateway[0] + "." + gateway[1] + "." + gateway[2] + ".";
-		}
-
-		/* Iterate over the entire network and ping each ip address */
-		for (int i = start + 2; i < end; i++) {
-			reachable = new CheckReachable();
-			reachable.execute(ipPrefix + i, "15");
-			sleep(15);
-			if (scanTask.isCancelled()) {
-				reachable.cancel(true);
-				return;
-			}
-		}
-
-		/* Check our ARP table for online hosts */
-		ArpScan.dumpArp();
-
-	}
-
-	/*
-	 * Take our thread off the run queue since the thread pool is limited
-	 */
-	private void sleep(int time) {
-
-		try {
-			Thread.sleep(time);
-		} catch (InterruptedException e) {
-		}
 
 	}
 
@@ -248,6 +185,8 @@ public class DiscoveryAgent {
 
 	public void scan() {
 
+		DeviceContentProvider.clearDatabase();
+		
 		if (hosts.size() > 0)
 			hosts.clear();
 
@@ -256,18 +195,21 @@ public class DiscoveryAgent {
 						.getStatus() == Status.PENDING))
 			scanTask.cancel(true);
 
-		scanTask = new ScanTask();
-		callbacks.onScanStarted();
+		callbacks.onScanStarted();		
+		scanTask = new ScanTask();		
 		scanTask.execute("");
 	}
 
+	/* Our class used to represent the threaded task to be executed */
 	private class ScanTask extends AsyncTask<String, Void, String> {
+		
 		/*
 		 * Function will perform network scan based off of the client's default
 		 * gateway and scan for samba shares
 		 */
 		public String doInBackground(String... params) {
-
+			
+			
 			/* Do our scan for online hosts */
 			int[] range = NetworkUtils.getIpRange(info.gateway, info.netmask);
 			lowest = range[0];
@@ -287,5 +229,51 @@ public class DiscoveryAgent {
 			callbacks.onScanFinished();
 		}
 	}
+	
+	/* Scan the entire subnet to find all online hosts */
+	private void findAvailHosts() {
 
+		int start;
+		int end;
+		int[] gateway;
+		String ipPrefix;
+
+		start = NetworkUtils.getOctets(lowest)[3];
+		end = NetworkUtils.getOctets(highest)[3];
+		gateway = NetworkUtils.getOctets(info.gateway);
+
+		/* Construct part of our ip address */
+		ipPrefix = gateway[0] + "." + gateway[1] + "." + gateway[2] + ".";
+
+		/* Iterate over the entire network and ping each ip address */
+		for (int i = start + 2; i < end; i++) {
+			reachable = new CheckReachable();
+			reachable.execute(ipPrefix + i, "15");
+			sleep(15);
+			if (scanTask.isCancelled()) {
+				reachable.cancel(true);
+				return;
+			}
+		}
+
+		/* Check our ARP table for online hosts */
+		ArpScan.dumpArp();
+
+	}
+
+	/*
+	 * Take our thread off the run queue since the thread pool is limited
+	 */
+	private void sleep(int time) {
+
+		try {
+			Thread.sleep(time);
+		} catch (InterruptedException e) {
+		}
+
+	}
+	
+	private void log(String message) {
+		Log.d(TAG, message);
+	}
 }

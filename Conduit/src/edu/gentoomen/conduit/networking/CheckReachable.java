@@ -3,7 +3,6 @@ package edu.gentoomen.conduit.networking;
 import java.net.InetAddress;
 
 import android.os.AsyncTask;
-import android.util.Log;
 
 public class CheckReachable extends AsyncTask<String, Void, String> {
 
@@ -25,8 +24,7 @@ public class CheckReachable extends AsyncTask<String, Void, String> {
 
 	private boolean pingAddress(String address, int timeout) {
 		boolean isReachable = false;
-		try {
-			Log.d("Will-debug", "Pinging address " + address);
+		try {			
 			InetAddress addr = InetAddress.getByName(address);
 			isReachable = addr.isReachable(timeout);
 		} catch (Exception e) {
