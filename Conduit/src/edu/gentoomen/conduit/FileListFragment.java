@@ -45,7 +45,6 @@ public class FileListFragment extends ListFragment implements
 
 	public interface Callbacks {
 		public void onFileSelected(String id);
-
 		public void onPathChanged(String path);
 	}
 

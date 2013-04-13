@@ -6,7 +6,9 @@ import java.util.LinkedList;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import edu.gentoomen.conduit.BrowserActivity;
+import edu.gentoomen.conduit.BrowserActivity.MediaErrCallbacks;
 import edu.gentoomen.conduit.FileListFragment;
+import edu.gentoomen.conduit.FileListFragment.Callbacks;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -44,6 +46,9 @@ public class MediaContentProvider extends ContentProvider {
 
 	private static final UriMatcher mUriMatcher = new UriMatcher(
 			UriMatcher.NO_MATCH);
+	
+	//send errors to BrowserActivity so it can display them
+	private static MediaErrCallbacks errCallbacks;
 
 	/*
 	 * All our columns in array form, useful for checking if the projection
@@ -56,6 +61,10 @@ public class MediaContentProvider extends ContentProvider {
 		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/", FOLDER);
 		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/file", MEDIA);
 
+	}
+	
+	public static void setCallbacks(MediaErrCallbacks callbacks) {
+		errCallbacks = callbacks;
 	}
 
 	@Override
@@ -116,7 +125,6 @@ public class MediaContentProvider extends ContentProvider {
 							+ DeviceNavigator.getPath());
 		}
 
-		Log.d(TAG, "isRoot: Return value false");
 		return false;
 
 	}

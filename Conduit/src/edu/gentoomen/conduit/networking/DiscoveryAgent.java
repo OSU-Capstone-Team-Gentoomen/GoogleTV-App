@@ -25,7 +25,7 @@ public class DiscoveryAgent {
 
 	private static String 			   TAG = "DiscoveryAgent";
 
-	/* Static fields for this class */
+	/* Will be used to query the db */
 	private static ContentResolver 	   resolver = null;
 	
 	@SuppressWarnings("unused")
@@ -100,7 +100,7 @@ public class DiscoveryAgent {
 
 	}
 
-	/* how many online IPs have a samba share */
+	/* how many online hosts have a samba share */
 	public int getSambaCount() {
 
 		String[] projection = { DeviceContentProvider.COL_ONLINE,
@@ -174,7 +174,7 @@ public class DiscoveryAgent {
 		return hosts;
 	}
 
-	public static Device macToPingable(String mac) {
+	public static Device macToPingable(String mac) throws IllegalArgumentException {
 
 		if (hosts.containsKey(mac))
 			return hosts.get(mac);
@@ -195,7 +195,7 @@ public class DiscoveryAgent {
 						.getStatus() == Status.PENDING))
 			scanTask.cancel(true);
 
-		callbacks.onScanStarted();		
+		//callbacks.onScanStarted();		
 		scanTask = new ScanTask();		
 		scanTask.execute("");
 	}

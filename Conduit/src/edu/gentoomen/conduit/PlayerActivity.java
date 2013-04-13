@@ -6,6 +6,7 @@ import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import edu.gentoomen.conduit.contentproviders.ResumeContentProvider;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
+import edu.gentoomen.conduit.networking.HttpStreamServer;
 import edu.gentoomen.utilities.FileHasher;
 import android.app.Activity;
 import android.content.ContentValues;
@@ -21,6 +22,9 @@ import android.widget.VideoView;
 
 public class PlayerActivity extends Activity {
 
+	/*HttpStreamServer should be moved here*/
+	private static HttpStreamServer server; /*Static?*/
+	
 	private static final String TAG = "PlayerActivity";
 	private static final String SRC_PATH = "http://127.0.0.1:8888";
 	private static final int TIME_COL = 3;

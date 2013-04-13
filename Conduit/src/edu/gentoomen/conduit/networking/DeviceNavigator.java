@@ -24,7 +24,7 @@ public class DeviceNavigator {
 
 	private static String path = "";
 
-	public DeviceNavigator(String dev) {
+	public DeviceNavigator() {
 	}
 
 	public static LinkedList<SmbFile> deviceLS() {

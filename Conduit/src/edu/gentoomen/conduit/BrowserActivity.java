@@ -30,6 +30,7 @@ import android.widget.EditText;
 import com.example.google.tv.leftnavbar.LeftNavBar;
 
 import edu.gentoomen.conduit.contentproviders.DeviceContentProvider;
+import edu.gentoomen.conduit.contentproviders.MediaContentProvider;
 import edu.gentoomen.conduit.networking.Device;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
@@ -58,6 +59,33 @@ public class BrowserActivity extends FragmentActivity implements
 	static final String[] SUMMARY_PROJECTION = new String[] {
 			DeviceContentProvider.ID, DeviceContentProvider.COL_IP_ADDRESS,
 			DeviceContentProvider.COL_MAC, DeviceContentProvider.COL_NBTADR };
+	
+	public interface MediaErrCallbacks {
+		public void onTimeout();
+		public void onAuthFail();
+		public void onAccessFail();
+	}
+	
+	private static MediaErrCallbacks errCallbacks = new MediaErrCallbacks() {
+		
+		@Override
+		public void onTimeout() {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onAuthFail() {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onAccessFail() {
+			// TODO Auto-generated method stub
+			
+		}
+	};
 
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		return new CursorLoader(this, DeviceContentProvider.CONTENT_URI,
@@ -156,6 +184,8 @@ public class BrowserActivity extends FragmentActivity implements
 
 		fileList = ((FileListFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.file_list));
+		
+		MediaContentProvider.setCallbacks(errCallbacks);
 
 	}
 
