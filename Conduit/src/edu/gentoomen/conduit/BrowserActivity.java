@@ -26,6 +26,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.example.google.tv.leftnavbar.LeftNavBar;
 
@@ -60,13 +61,17 @@ public class BrowserActivity extends FragmentActivity implements
 			DeviceContentProvider.ID, DeviceContentProvider.COL_IP_ADDRESS,
 			DeviceContentProvider.COL_MAC, DeviceContentProvider.COL_NBTADR };
 	
+	/*private static void showToast(String msg, int len) {
+		Toast.makeText((Context)this, msg, len).show();
+	}*/
+	
 	public interface MediaErrCallbacks {
 		public void onTimeout();
 		public void onAuthFail();
 		public void onAccessFail();
 	}
 	
-	private static MediaErrCallbacks errCallbacks = new MediaErrCallbacks() {
+	private MediaErrCallbacks errCallbacks = new MediaErrCallbacks() {
 		
 		@Override
 		public void onTimeout() {
@@ -76,8 +81,7 @@ public class BrowserActivity extends FragmentActivity implements
 		
 		@Override
 		public void onAuthFail() {
-			// TODO Auto-generated method stub
-			
+			Toast.makeText(getParent(), "Auth error", Toast.LENGTH_LONG).show();
 		}
 		
 		@Override

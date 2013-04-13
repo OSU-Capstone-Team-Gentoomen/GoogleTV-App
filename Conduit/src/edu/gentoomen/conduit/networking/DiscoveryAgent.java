@@ -195,7 +195,7 @@ public class DiscoveryAgent {
 						.getStatus() == Status.PENDING))
 			scanTask.cancel(true);
 
-		//callbacks.onScanStarted();		
+		callbacks.onScanStarted();		
 		scanTask = new ScanTask();		
 		scanTask.execute("");
 	}

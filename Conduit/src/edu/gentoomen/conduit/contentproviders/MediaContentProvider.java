@@ -2,6 +2,13 @@ package edu.gentoomen.conduit.contentproviders;
 
 import java.net.MalformedURLException;
 import java.util.LinkedList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
@@ -62,6 +69,9 @@ public class MediaContentProvider extends ContentProvider {
 		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/file", MEDIA);
 
 	}
+	
+	//only need one thread to CD a folder in the background
+	private ExecutorService executorService = Executors.newFixedThreadPool(1);
 	
 	public static void setCallbacks(MediaErrCallbacks callbacks) {
 		errCallbacks = callbacks;
@@ -128,6 +138,19 @@ public class MediaContentProvider extends ContentProvider {
 		return false;
 
 	}
+	
+	private class CdFolder implements Callable<LinkedList<SmbFile> > {
+		private String fileName;
+		
+		public CdFolder(String fileName) {
+			this.fileName = fileName;
+		}
+		
+		@Override
+		public LinkedList<SmbFile> call() {
+			return DeviceNavigator.deviceCD(fileName);
+		}
+	}
 
 	@Override
 	/*
@@ -150,9 +173,24 @@ public class MediaContentProvider extends ContentProvider {
 			Log.d(TAG, "folder type selected, doing LS of " + fileName);
 			int counter = 1;
 
-			LinkedList<SmbFile> listOfFiles = DeviceNavigator
-					.deviceCD(fileName);
-			Log.d(TAG, "current path: " + DeviceNavigator.getPath());
+			/*LinkedList<SmbFile> listOfFiles = DeviceNavigator
+					.deviceCD(fileName);*/
+			Future<LinkedList<SmbFile> > result = executorService.submit(new CdFolder(fileName));
+			LinkedList<SmbFile> listOfFiles = null;
+			
+			try {
+				listOfFiles = result.get(500, TimeUnit.MILLISECONDS);
+			} catch(InterruptedException e) {
+				//
+			} catch(ExecutionException e) {
+				//
+			} catch(TimeoutException e) {
+				//have a callback handle this
+				errCallbacks.onTimeout();
+				return null;
+			}
+			
+			//Log.d(TAG, "current path: " + DeviceNavigator.getPath());
 
 			if (!isRoot()) {
 				/*
@@ -181,18 +219,21 @@ public class MediaContentProvider extends ContentProvider {
 						type = MEDIA;
 					}
 
-					// TODO a more robust way of blacklisting names than a big
-					// if statement would be nice
-					if (name.equals("IPC$") || name.startsWith(".")) {
-						continue;
-					}
-
 					curse.newRow().add(counter).add(f.getPath()).add(name)
 							.add(type);
 
 					counter++;
 				} catch (SmbException e) {
-					Log.d(TAG, "SmbException: " + e.getMessage());
+					int status = e.getNtStatus();
+					
+					switch(status) {
+					case SmbException.NT_STATUS_ACCESS_DENIED:
+						Log.d(TAG, "auth error caught");
+						errCallbacks.onAuthFail();
+						break;
+					default:
+						Log.d(TAG, "Other error caught");
+					}
 				}
 			}
 			break;
