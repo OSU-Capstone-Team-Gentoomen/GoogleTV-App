@@ -23,6 +23,7 @@ import android.widget.VideoView;
 public class PlayerActivity extends Activity {
 
 	/*HttpStreamServer should be moved here*/
+	@SuppressWarnings("unused")
 	private static HttpStreamServer server; /*Static?*/
 	
 	private static final String TAG = "PlayerActivity";

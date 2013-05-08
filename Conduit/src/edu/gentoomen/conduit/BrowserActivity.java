@@ -31,7 +31,6 @@ import android.widget.Toast;
 import com.example.google.tv.leftnavbar.LeftNavBar;
 
 import edu.gentoomen.conduit.contentproviders.DeviceContentProvider;
-import edu.gentoomen.conduit.contentproviders.MediaContentProvider;
 import edu.gentoomen.conduit.networking.Device;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
@@ -43,6 +42,7 @@ public class BrowserActivity extends FragmentActivity implements
 
 	private static DeviceList deviceList;
 	private static FileListFragment fileList;
+	private static Context		context;
 
 	// TODO remove SmbCredentials
 	private static SmbCredentials credentials;
@@ -65,31 +65,7 @@ public class BrowserActivity extends FragmentActivity implements
 		Toast.makeText((Context)this, msg, len).show();
 	}*/
 	
-	public interface MediaErrCallbacks {
-		public void onTimeout();
-		public void onAuthFail();
-		public void onAccessFail();
-	}
-	
-	private MediaErrCallbacks errCallbacks = new MediaErrCallbacks() {
-		
-		@Override
-		public void onTimeout() {
-			// TODO Auto-generated method stub
-			
-		}
-		
-		@Override
-		public void onAuthFail() {
-			Toast.makeText(getParent(), "Auth error", Toast.LENGTH_LONG).show();
-		}
-		
-		@Override
-		public void onAccessFail() {
-			// TODO Auto-generated method stub
-			
-		}
-	};
+
 
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		return new CursorLoader(this, DeviceContentProvider.CONTENT_URI,
@@ -159,7 +135,7 @@ public class BrowserActivity extends FragmentActivity implements
 	public void onCreate(Bundle savedInstanceState) {
 
 		super.onCreate(savedInstanceState);
-
+		context = (Activity) this;
 		deviceList = new DeviceList(this);
 
 		progressDialog = new ProgressDialog(this);
@@ -189,7 +165,7 @@ public class BrowserActivity extends FragmentActivity implements
 		fileList = ((FileListFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.file_list));
 		
-		MediaContentProvider.setCallbacks(errCallbacks);
+		DeviceNavigator.setErrCallbacks(new SmbErrorListener());
 
 	}
 
@@ -201,8 +177,7 @@ public class BrowserActivity extends FragmentActivity implements
 
 			// TODO fix me
 			if (FileListFragment.selectedServer != null)
-				credentials
-						.removeCredential(FileListFragment.selectedServer.mac);
+				logout();
 		}
 		return true;
 	}
@@ -308,6 +283,47 @@ public class BrowserActivity extends FragmentActivity implements
 			progressDialog.cancel();
 		}
 	}
+	
+	private class UnfinishedTabListener implements ActionBar.TabListener {
+
+		@Override
+		public void onTabReselected(Tab tab, FragmentTransaction ft) {
+			
+		}
+
+		@Override
+		public void onTabSelected(Tab tab, FragmentTransaction ft) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+		}
+		
+	}
+	
+	private class FavoritesTabListener implements ActionBar.TabListener {
+
+		@Override
+		public void onTabReselected(Tab tab, FragmentTransaction ft) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onTabSelected(Tab tab, FragmentTransaction ft) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
 
 	private class RefreshTabListener implements ActionBar.TabListener {
 
@@ -349,6 +365,14 @@ public class BrowserActivity extends FragmentActivity implements
 					newTab().setText("Refresh")
 							.setTabListener(new RefreshTabListener())
 							.setIcon(R.drawable.refresh_normal), false);
+			this.addTab(
+					newTab().setText("Favorites")
+							.setTabListener(new FavoritesTabListener())
+							.setIcon(R.drawable.favorites_icon), false);
+			this.addTab(
+					newTab().setText("Unfinished")
+							.setTabListener(new UnfinishedTabListener())
+							.setIcon(R.drawable.unfinished_clock), false);
 		}
 	}
 
@@ -431,5 +455,57 @@ public class BrowserActivity extends FragmentActivity implements
 	private void log(String message) {
 		Log.d("MainActivity", message);
 	}
+	
+	private class SmbErrorListener implements DeviceNavigator.Callbacks{
+		@Override
+		public void onAuthFailed() {
+			Log.d("Main", "Showing logon error");
+			BrowserActivity.this.runOnUiThread(new Runnable() {
+				
+				@Override
+				public void run() {
+					Toast.makeText(context, "Invalid username or password", Toast.LENGTH_SHORT).show();					
+				}
+			});
+			logout();
+		}
 
+		@Override
+		public void onTimeout() {
+			BrowserActivity.this.runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					Toast.makeText(context, "Request timed out", Toast.LENGTH_SHORT).show();					
+				}
+			});
+			//logout();
+		}
+		
+		public void onConnectError() {
+			BrowserActivity.this.runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					Toast.makeText(context, "Connection error", Toast.LENGTH_SHORT).show();					
+				}
+			});
+			logout();
+		}
+		
+		public void onAccessDenied() {
+			BrowserActivity.this.runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					Toast.makeText(context, "Access Denied", Toast.LENGTH_SHORT).show();					
+				}
+			});
+		}
+	}
+	
+	private void logout() {
+		credentials.removeCredential(FileListFragment.selectedServer.mac);
+	}
+	
 }

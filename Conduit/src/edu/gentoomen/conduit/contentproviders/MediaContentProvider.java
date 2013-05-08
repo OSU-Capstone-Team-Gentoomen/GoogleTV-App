@@ -2,21 +2,9 @@ package edu.gentoomen.conduit.contentproviders;
 
 import java.net.MalformedURLException;
 import java.util.LinkedList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
-import edu.gentoomen.conduit.BrowserActivity;
-import edu.gentoomen.conduit.BrowserActivity.MediaErrCallbacks;
-import edu.gentoomen.conduit.FileListFragment;
-import edu.gentoomen.conduit.FileListFragment.Callbacks;
-import edu.gentoomen.conduit.networking.DeviceNavigator;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -24,6 +12,9 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.util.Log;
+import edu.gentoomen.conduit.BrowserActivity;
+import edu.gentoomen.conduit.FileListFragment;
+import edu.gentoomen.conduit.networking.DeviceNavigator;
 
 public class MediaContentProvider extends ContentProvider {
 
@@ -55,7 +46,22 @@ public class MediaContentProvider extends ContentProvider {
 			UriMatcher.NO_MATCH);
 	
 	//send errors to BrowserActivity so it can display them
-	private static MediaErrCallbacks errCallbacks;
+//	private Callbacks errCallbacks = browserCallback;
+//	
+//	public interface Callbacks {
+//		public void onAuthFailed();
+//		public void onTimeout();
+//	}
+//	
+//	private static Callbacks browserCallback = new Callbacks() {
+//		@Override
+//		public void onAuthFailed() {
+//		}
+//
+//		@Override
+//		public void onTimeout() {
+//		}
+//	};
 
 	/*
 	 * All our columns in array form, useful for checking if the projection
@@ -70,13 +76,6 @@ public class MediaContentProvider extends ContentProvider {
 
 	}
 	
-	//only need one thread to CD a folder in the background
-	private ExecutorService executorService = Executors.newFixedThreadPool(1);
-	
-	public static void setCallbacks(MediaErrCallbacks callbacks) {
-		errCallbacks = callbacks;
-	}
-
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
 		return 0;
@@ -138,19 +137,6 @@ public class MediaContentProvider extends ContentProvider {
 		return false;
 
 	}
-	
-	private class CdFolder implements Callable<LinkedList<SmbFile> > {
-		private String fileName;
-		
-		public CdFolder(String fileName) {
-			this.fileName = fileName;
-		}
-		
-		@Override
-		public LinkedList<SmbFile> call() {
-			return DeviceNavigator.deviceCD(fileName);
-		}
-	}
 
 	@Override
 	/*
@@ -173,24 +159,7 @@ public class MediaContentProvider extends ContentProvider {
 			Log.d(TAG, "folder type selected, doing LS of " + fileName);
 			int counter = 1;
 
-			/*LinkedList<SmbFile> listOfFiles = DeviceNavigator
-					.deviceCD(fileName);*/
-			Future<LinkedList<SmbFile> > result = executorService.submit(new CdFolder(fileName));
-			LinkedList<SmbFile> listOfFiles = null;
-			
-			try {
-				listOfFiles = result.get(500, TimeUnit.MILLISECONDS);
-			} catch(InterruptedException e) {
-				//
-			} catch(ExecutionException e) {
-				//
-			} catch(TimeoutException e) {
-				//have a callback handle this
-				errCallbacks.onTimeout();
-				return null;
-			}
-			
-			//Log.d(TAG, "current path: " + DeviceNavigator.getPath());
+			LinkedList<SmbFile> listOfFiles = DeviceNavigator.deviceCD(fileName);
 
 			if (!isRoot()) {
 				/*
@@ -224,16 +193,7 @@ public class MediaContentProvider extends ContentProvider {
 
 					counter++;
 				} catch (SmbException e) {
-					int status = e.getNtStatus();
-					
-					switch(status) {
-					case SmbException.NT_STATUS_ACCESS_DENIED:
-						Log.d(TAG, "auth error caught");
-						errCallbacks.onAuthFail();
-						break;
-					default:
-						Log.d(TAG, "Other error caught");
-					}
+
 				}
 			}
 			break;
