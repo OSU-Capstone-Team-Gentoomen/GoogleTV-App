@@ -1,36 +1,44 @@
 package edu.gentoomen.conduit;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
-import edu.gentoomen.conduit.contentproviders.MediaContentProvider;
-import edu.gentoomen.conduit.networking.DeviceNavigator;
-import edu.gentoomen.conduit.networking.HttpStreamServer;
-import edu.gentoomen.conduit.networking.Device;
-import edu.gentoomen.utilities.Utils;
+import jcifs.smb.SmbException;
+import jcifs.smb.SmbFile;
+
+import android.app.Activity;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.support.v4.app.LoaderManager;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.app.Activity;
-import android.database.Cursor;
-
-import android.util.Log;
+import edu.gentoomen.conduit.contentproviders.MediaContentProvider;
+import edu.gentoomen.conduit.networking.Device;
+import edu.gentoomen.conduit.networking.DeviceNavigator;
+import edu.gentoomen.conduit.networking.HttpStreamServer;
+import edu.gentoomen.utilities.Utils;
 
 public class FileListFragment extends ListFragment implements
 		LoaderManager.LoaderCallbacks<Cursor> {
 
 	public static final int TYPE_FOLDER = 0;
-	public static final int TYPE_FILE = 1;
-
+	public static final int TYPE_FILE   = 1;
+	public static final int TYPE_FAVS	= 2;
+	public static final int TYPE_UNFIN 	= 3;
+	
 	// TODO move to MediaContentProvider
-	private static final int FILE_NAME_INDEX = 2;
+	private static final int FILE_NAME_INDEX = 2;	
 	private static final int FILE_CONTENT_TYPE = 3;
+	private static final int FILE_PATH_INDEX = 1;
 
 	private String selectedFile = "";
 
@@ -70,6 +78,16 @@ public class FileListFragment extends ListFragment implements
 		// TODO move this to the fragment XML
 		setEmptyText("No files");
 
+		getListView().setOnItemLongClickListener(new OnItemLongClickListener() {
+
+			@Override
+			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				Log.d(LOG_TAG, "Long click detected!");
+				return false;
+			}
+		});
+		
 		// Create an empty adapter we will use to display the loaded data.
 		mAdapter = new SimpleCursorAdapter(getActivity(),
 				R.layout.file_list_item, null, new String[] { "name", "type" },
@@ -85,6 +103,7 @@ public class FileListFragment extends ListFragment implements
 				TextView textView = (TextView) view;
 				textView.setCompoundDrawablePadding(10);
 				if (columnIndex == 3) {
+					
 					int type = cursor.getInt(columnIndex);
 					// TODO make this more readable
 					if (type == MediaContentProvider.MEDIA) {
@@ -128,18 +147,57 @@ public class FileListFragment extends ListFragment implements
 	public void onListItemClick(ListView listView, View view, int position,
 			long id) {
 		super.onListItemClick(listView, view, position, id);
-
+						
 		Cursor i = (Cursor) listView.getItemAtPosition(position);
-		String fileName = i.getString(FILE_NAME_INDEX);
-
+		String fileName = i.getString(FILE_NAME_INDEX);	
+		
 		switch (i.getInt(FILE_CONTENT_TYPE)) {
-		case MediaContentProvider.MEDIA:
-
+		case MediaContentProvider.MEDIA:			
+			Log.d(LOG_TAG, i.getString(FILE_PATH_INDEX));
+			if (selectedServer == null) {
+				selectedServer = DeviceNavigator.determineServer(i.getString(FILE_PATH_INDEX));
+				DeviceNavigator.setPath(i.getString(FILE_PATH_INDEX));
+											
+				if (selectedServer == null)
+					return;
+								
+			}
+			
+			if (!BrowserActivity.getCredentials().hostHasAuth(selectedServer.mac)) {
+				if(selectedServer.nbtName != null)
+					BrowserActivity.onResumeNoLogFailed(selectedServer.nbtName);
+				else
+					BrowserActivity.onResumeNoLogFailed(selectedServer.ip);				
+				return;
+			}
+			
+			try {
+				if (!(new SmbFile("smb://" + i.getString(FILE_PATH_INDEX), BrowserActivity.getCredentials().getNtlmAuth(selectedServer.mac)).canRead())) {
+					
+					if (selectedServer.nbtName != null)
+						BrowserActivity.onResumeAuthFailed(selectedServer.nbtName);
+					else
+						BrowserActivity.onResumeAuthFailed(selectedServer.ip);
+					
+					return;
+					
+				}
+				
+			} catch (SmbException e1) {
+				if (selectedServer.nbtName != null)
+					BrowserActivity.onResumeAuthFailed(selectedServer.nbtName);
+				else
+					BrowserActivity.onResumeAuthFailed(selectedServer.ip);
+				
+				return;
+			} catch (MalformedURLException e1) {
+				return;
+			}
+			
 			Log.d(LOG_TAG, "clicked on " + fileName);
 			// TODO moves to MediaActivity class
-			try {
-				server = new HttpStreamServer(DeviceNavigator.getPath()
-						+ fileName, Utils.getMimeType(fileName));
+			try {								
+				server = new HttpStreamServer(i.getString(FILE_PATH_INDEX), Utils.getMimeType(fileName));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -163,10 +221,13 @@ public class FileListFragment extends ListFragment implements
 		Log.d(LOG_TAG, "Setting path to " + fileSelected);
 		selectedFile = fileSelected;
 		getLoaderManager().restartLoader(0, null, this);
-		Log.d(LOG_TAG, "Current path: " + DeviceNavigator.getPath());
-		// TODO remove DeviceNavigator here
+		Log.d(LOG_TAG, "Current path: " + DeviceNavigator.getPath());		
 		mCallbacks.onPathChanged(DeviceNavigator.getPath());
 
+	}
+	
+	public void refresh(){
+		getLoaderManager().restartLoader(0, null, this);
 	}
 
 	public void setSelectedType(int type) {
@@ -195,6 +256,12 @@ public class FileListFragment extends ListFragment implements
 			break;
 		case TYPE_FILE:
 			uri = Uri.withAppendedPath(baseUri, "file");
+			break;
+		case TYPE_FAVS:
+			uri = Uri.withAppendedPath(baseUri, "favorites");
+			break;
+		case TYPE_UNFIN:
+			uri = Uri.withAppendedPath(baseUri, "unfinished");
 			break;
 		default:
 			uri = Uri.withAppendedPath(baseUri, "INVALID");
@@ -227,7 +294,7 @@ public class FileListFragment extends ListFragment implements
 	/*
 	 * Clear the DeviceNavigator path so we can switch between devices
 	 */
-	public void setDevice(String device) {
+	public void setDevice(String device, int mode) {
 
 		Log.d(LOG_TAG, "setting device to: " + device);
 		DeviceNavigator.setPath("");

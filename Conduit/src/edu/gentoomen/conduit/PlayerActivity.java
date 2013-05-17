@@ -8,6 +8,7 @@ import edu.gentoomen.conduit.contentproviders.ResumeContentProvider;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.HttpStreamServer;
 import edu.gentoomen.utilities.FileHasher;
+import edu.gentoomen.utilities.Utils;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -107,7 +108,7 @@ public class PlayerActivity extends Activity {
 					}
 				}
 
-				// BrowserActivity.getVideoProgressBar().cancel();
+				BrowserActivity.videoLoadingProgress.cancel();
 				myVideoView.start();
 
 			}
@@ -121,8 +122,8 @@ public class PlayerActivity extends Activity {
 		super.onDestroy();
 		FileListFragment.server.close();
 
-		// if (BrowserActivity.getVideoProgressBar().isShowing())
-		// BrowserActivity.getVideoProgressBar().cancel();
+		 if (BrowserActivity.videoLoadingProgress.isShowing())
+			 BrowserActivity.videoLoadingProgress.cancel();
 
 	}
 
@@ -140,7 +141,7 @@ public class PlayerActivity extends Activity {
 					insertNewResumeMedia(file.getName(),
 							FileHasher.getMediaFileHash(file.getInputStream(),
 									file.length()), DeviceNavigator.getPath(),
-							myVideoView.getCurrentPosition());
+							myVideoView.getCurrentPosition(), Utils.getExtension(file.getName()));
 			} catch (SmbException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
@@ -162,13 +163,14 @@ public class PlayerActivity extends Activity {
 	}
 
 	private void insertNewResumeMedia(String name, String hash, String path,
-			int played) {
+			int played, String type) {
 
 		ContentValues values = new ContentValues();
 		values.put(ResumeContentProvider.COL_HASH, hash);
 		values.put(ResumeContentProvider.COL_NAME, name);
 		values.put(ResumeContentProvider.COL_TIME, played);
 		values.put(ResumeContentProvider.COL_PATH, path);
+		values.put(ResumeContentProvider.COL_TYPE, type);
 
 		Log.d(TAG, "Inserting Time: " + played + ", Hash: " + hash + ", Path: "
 				+ path + ", Name: " + name);

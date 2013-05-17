@@ -2,8 +2,11 @@ package edu.gentoomen.conduit.networking;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
+import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -14,8 +17,10 @@ import java.util.concurrent.TimeoutException;
 
 import edu.gentoomen.conduit.BrowserActivity;
 import edu.gentoomen.conduit.FileListFragment;
+import edu.gentoomen.utilities.NetworkUtils;
 import edu.gentoomen.utilities.Utils;
 
+import jcifs.netbios.NbtAddress;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.util.Log;
@@ -36,6 +41,7 @@ public class DeviceNavigator {
 	public interface Callbacks {
 		public void onAuthFailed();
 		public void onTimeout();
+		public void onConnectErrorLogout();
 		public void onConnectError();
 		public void onAccessDenied();
 	}
@@ -55,10 +61,31 @@ public class DeviceNavigator {
 			return new SmbFile("smb://" + path, BrowserActivity.getCredentials().getNtlmAuth(FileListFragment.selectedServer.mac)).listFiles(new FileListFilter());
 		}
 	}
+	
+	public static Device determineServer(String path) {
+		StringTokenizer tokens = new StringTokenizer(path, "/");
+		String server = tokens.nextToken();
+		String mac;
+		InetAddress a;
+		
+		Log.d(TAG, server);		
+		try {
+			mac = NetworkUtils.bytesToHexString(NbtAddress.getByName(server).getMacAddress());
+			a = NbtAddress.getByName(server).getInetAddress();
+		} catch (UnknownHostException e) {
+			errCallbacks.onConnectError();
+			return null;
+		}
+		
+		if (a == null || mac == null)
+			return null;
+		
+		return new Device(a, mac, server);
+	}
 
 	public static LinkedList<SmbFile> deviceLS() {
 
-		Log.d(TAG, "Listing " + path);
+		//Log.d(TAG, "Listing " + path);
 		LinkedList<SmbFile> files = new LinkedList<SmbFile>();
 		Future<SmbFile[]> result = executorService.submit(new CdFolder());
 		SmbFile[] tmp = null;
@@ -73,19 +100,19 @@ public class DeviceNavigator {
 				
 				switch(status) {
 				case SmbException.NT_STATUS_ACCESS_DENIED:
-					Log.d(TAG, "auth error caught");					
+					//Log.d(TAG, "auth error caught");					
 					errCallbacks.onAccessDenied();
 					break;
 				case SmbException.NT_STATUS_UNSUCCESSFUL:
-					Log.d(TAG, "Could not connect");
-					errCallbacks.onConnectError();
+					//Log.d(TAG, "Could not connect");
+					errCallbacks.onConnectErrorLogout();
 					break;
 				case SmbException.NT_STATUS_LOGON_FAILURE:
-					Log.d(TAG, "Could not logon");
+					//Log.d(TAG, "Could not logon");
 					errCallbacks.onAuthFailed();
 					break;
 				default:
-					Log.d(TAG, "Other error caught");
+					//Log.d(TAG, "Other error caught");
 				}
 			}						
 			
@@ -142,10 +169,10 @@ public class DeviceNavigator {
 		if (folder.equalsIgnoreCase("..")) {
 			path = getParentPath(path);
 		} else {
-			Log.d(TAG, "path before append " + path);
+			//Log.d(TAG, "path before append " + path);
 			path = path + folder + "/";
 			path.trim();
-			Log.d(TAG, "path after append " + path);
+			//Log.d(TAG, "path after append " + path);
 		}
 
 		LinkedList<SmbFile> ls = deviceLS();

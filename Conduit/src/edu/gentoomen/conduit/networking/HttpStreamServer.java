@@ -16,12 +16,12 @@ import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import edu.gentoomen.conduit.BrowserActivity;
-import edu.gentoomen.conduit.FileListFragment;
-import android.util.Log;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbFileInputStream;
+import android.util.Log;
+import edu.gentoomen.conduit.BrowserActivity;
+import edu.gentoomen.conduit.FileListFragment;
 
 /*
  * Simple HTTP servlet that will serve samba content
@@ -63,9 +63,10 @@ public class HttpStreamServer {
 
 	public HttpStreamServer(String path, String mimeType) throws IOException {
 
-		Log.d(TAG, "starting StreamOverHttp init");
+		Log.d(TAG, "starting StreamOverHttp init");	
 		file = new SmbFile("smb://" + path, BrowserActivity.getCredentials()
 				.getNtlmAuth(FileListFragment.selectedServer.mac));
+		Log.d(TAG, "streaming file " + path);
 		fileMimeType = mimeType;
 		serverSocket = new ServerSocket(HTTP_PORT);
 

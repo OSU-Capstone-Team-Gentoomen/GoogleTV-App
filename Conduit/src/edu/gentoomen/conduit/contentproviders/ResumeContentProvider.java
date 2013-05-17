@@ -24,6 +24,7 @@ public class ResumeContentProvider extends TemplateContentProvider {
 	public static final String COL_PATH = "filePath";
 	public static final String COL_NAME = "name";
 	public static final String COL_TIME = "playbackTime";
+	public static final String COL_TYPE = "type";
 
 	// Column Indexes
 	public static final int HASH_COLUMN = 1;
@@ -40,7 +41,7 @@ public class ResumeContentProvider extends TemplateContentProvider {
 	private static final String CREATE_TABLE_RESUME = "create table "
 			+ TABLE_RESUME + " (" + ID + " integer, " + COL_HASH
 			+ " text primary key, " + COL_PATH + " text not null, " + COL_NAME
-			+ " text not null, " + COL_TIME + " text not null);";
+			+ " text not null, " + COL_TIME + " text not null, " + COL_TYPE + " text not null);";
 	
 	protected String assignLogTag() {
 		return TAG;

@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
@@ -19,9 +20,16 @@ import edu.gentoomen.conduit.networking.DeviceNavigator;
 public class MediaContentProvider extends ContentProvider {
 
 	/* Constants used to differentiate between different URIs */
-	public static final int MEDIA = 666;
+	public static final int MEDIA  = 666;
 	public static final int FOLDER = 667;
-
+	public static final int FAVS   = 668;
+	public static final int UNFIN  = 669;
+	
+	/* Used to multiplex between different selection states */
+	public static final int SELECT_FROM_FAVORITES  = 0;
+	public static final int SELECT_FROM_UNFINISHED = 1;
+	public static final int SELECT_FROM_DEVICE 	   = 2;
+	
 	/* private constants */
 	private static final String AUTHORITY = "edu.gentoomen.conduit.media";
 	private static final String BASE_PATH = "media";
@@ -43,25 +51,7 @@ public class MediaContentProvider extends ContentProvider {
 			+ "/" + BASE_PATH);
 
 	private static final UriMatcher mUriMatcher = new UriMatcher(
-			UriMatcher.NO_MATCH);
-	
-	//send errors to BrowserActivity so it can display them
-//	private Callbacks errCallbacks = browserCallback;
-//	
-//	public interface Callbacks {
-//		public void onAuthFailed();
-//		public void onTimeout();
-//	}
-//	
-//	private static Callbacks browserCallback = new Callbacks() {
-//		@Override
-//		public void onAuthFailed() {
-//		}
-//
-//		@Override
-//		public void onTimeout() {
-//		}
-//	};
+			UriMatcher.NO_MATCH);	
 
 	/*
 	 * All our columns in array form, useful for checking if the projection
@@ -73,7 +63,8 @@ public class MediaContentProvider extends ContentProvider {
 
 		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/", FOLDER);
 		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/file", MEDIA);
-
+		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/favorites", FAVS);
+		mUriMatcher.addURI(AUTHORITY, BASE_PATH + "/unfinished", UNFIN);
 	}
 	
 	@Override
@@ -155,6 +146,29 @@ public class MediaContentProvider extends ContentProvider {
 			Log.d(TAG, "Media file type selected");
 			break;
 
+		case FAVS:			
+			break;
+			
+		case UNFIN:
+			String mProjection[] = {
+				ResumeContentProvider.COL_PATH,
+				ResumeContentProvider.COL_NAME,						
+			};
+			
+			ContentResolver resolver = getContext().getContentResolver();
+			Cursor mCurse = resolver.query(ResumeContentProvider.CONTENT_URI, mProjection, null, null, "");
+						
+			for (int i = 0; mCurse.moveToNext(); i++) {
+				
+			curse.newRow().add(i)
+						  .add(mCurse.getString(0) + mCurse.getString(1))
+					      .add(mCurse.getString(1))
+						  .add(MEDIA);
+			
+			}
+			
+			return curse;
+			
 		case FOLDER:
 			Log.d(TAG, "folder type selected, doing LS of " + fileName);
 			int counter = 1;
@@ -188,7 +202,7 @@ public class MediaContentProvider extends ContentProvider {
 						type = MEDIA;
 					}
 
-					curse.newRow().add(counter).add(f.getPath()).add(name)
+					curse.newRow().add(counter).add(f.getPath().substring(6)).add(name)
 							.add(type);
 
 					counter++;

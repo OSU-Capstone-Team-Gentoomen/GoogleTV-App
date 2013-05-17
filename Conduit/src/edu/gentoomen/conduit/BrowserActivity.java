@@ -31,6 +31,7 @@ import android.widget.Toast;
 import com.example.google.tv.leftnavbar.LeftNavBar;
 
 import edu.gentoomen.conduit.contentproviders.DeviceContentProvider;
+import edu.gentoomen.conduit.contentproviders.MediaContentProvider;
 import edu.gentoomen.conduit.networking.Device;
 import edu.gentoomen.conduit.networking.DeviceNavigator;
 import edu.gentoomen.conduit.networking.DiscoveryAgent;
@@ -50,7 +51,7 @@ public class BrowserActivity extends FragmentActivity implements
 	private static DiscoveryAgent discoveryAgent;
 	private static ProgressDialog progressDialog;
 	// TODO move to PlayerActivity if possible
-	// private static ProgressDialog videoLoadingProgress;
+	public static ProgressDialog videoLoadingProgress;
 
 	private static final int COL_IP_ADDRESS = 1;
 	private static final int COL_MAC = 2;
@@ -145,10 +146,10 @@ public class BrowserActivity extends FragmentActivity implements
 		progressDialog.setMessage("Analyzing your network, please wait");
 
 		// TODO move to PlayerActivity
-		// videoLoadingProgress = new ProgressDialog(this);
-		// videoLoadingProgress.setCancelable(true);
-		// videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		// videoLoadingProgress.setMessage("Loading...");
+		 videoLoadingProgress = new ProgressDialog(this);
+		 videoLoadingProgress.setCancelable(true);
+		 videoLoadingProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		 videoLoadingProgress.setMessage("Loading...");
 
 		credentials = new SmbCredentials();
 
@@ -195,7 +196,7 @@ public class BrowserActivity extends FragmentActivity implements
 		} else {
 			detailIntent = new Intent(this, PlayerActivity.class);
 			// TODO move to PlayerActivity
-			// videoLoadingProgress.show();
+			videoLoadingProgress.show();
 		}
 
 		startActivity(detailIntent);
@@ -293,8 +294,8 @@ public class BrowserActivity extends FragmentActivity implements
 
 		@Override
 		public void onTabSelected(Tab tab, FragmentTransaction ft) {
-			// TODO Auto-generated method stub
-			
+			fileList.setSelectedType(FileListFragment.TYPE_UNFIN);
+			fileList.refresh();
 		}
 
 		@Override
@@ -307,13 +308,10 @@ public class BrowserActivity extends FragmentActivity implements
 
 		@Override
 		public void onTabReselected(Tab tab, FragmentTransaction ft) {
-			// TODO Auto-generated method stub
-			
 		}
 
 		@Override
-		public void onTabSelected(Tab tab, FragmentTransaction ft) {
-			// TODO Auto-generated method stub
+		public void onTabSelected(Tab tab, FragmentTransaction ft) {			
 			
 		}
 
@@ -365,10 +363,10 @@ public class BrowserActivity extends FragmentActivity implements
 					newTab().setText("Refresh")
 							.setTabListener(new RefreshTabListener())
 							.setIcon(R.drawable.refresh_normal), false);
-			this.addTab(
-					newTab().setText("Favorites")
-							.setTabListener(new FavoritesTabListener())
-							.setIcon(R.drawable.favorites_icon), false);
+//			this.addTab(
+//					newTab().setText("Favorites")
+//							.setTabListener(new FavoritesTabListener())
+//							.setIcon(R.drawable.favorites_icon), false);
 			this.addTab(
 					newTab().setText("Unfinished")
 							.setTabListener(new UnfinishedTabListener())
@@ -436,7 +434,7 @@ public class BrowserActivity extends FragmentActivity implements
 		builder.show();
 	}
 
-	private void loginToShare() {
+	public static void loginToShare() {
 
 		String title;
 
@@ -447,19 +445,19 @@ public class BrowserActivity extends FragmentActivity implements
 
 		log(fileList == null ? "fileList is null" : "not null");
 		fileList.setSelectedType(FileListFragment.TYPE_FOLDER);
-		fileList.setDevice(title);
+		fileList.setDevice(title, MediaContentProvider.SELECT_FROM_DEVICE);
 		deviceList.setTitle(title);
 
 	}
 
-	private void log(String message) {
+	private static void log(String message) {
 		Log.d("MainActivity", message);
 	}
 	
 	private class SmbErrorListener implements DeviceNavigator.Callbacks{
 		@Override
 		public void onAuthFailed() {
-			Log.d("Main", "Showing logon error");
+					
 			BrowserActivity.this.runOnUiThread(new Runnable() {
 				
 				@Override
@@ -469,7 +467,19 @@ public class BrowserActivity extends FragmentActivity implements
 			});
 			logout();
 		}
+		
+		@Override
+		public void onConnectErrorLogout() {
+			BrowserActivity.this.runOnUiThread(new Runnable() {
 
+				@Override
+				public void run() {
+					Toast.makeText(context, "Connection error", Toast.LENGTH_SHORT).show();					
+				}
+			});
+			logout();
+		}
+		
 		@Override
 		public void onTimeout() {
 			BrowserActivity.this.runOnUiThread(new Runnable() {
@@ -479,7 +489,7 @@ public class BrowserActivity extends FragmentActivity implements
 					Toast.makeText(context, "Request timed out", Toast.LENGTH_SHORT).show();					
 				}
 			});
-			//logout();
+			
 		}
 		
 		public void onConnectError() {
@@ -490,7 +500,6 @@ public class BrowserActivity extends FragmentActivity implements
 					Toast.makeText(context, "Connection error", Toast.LENGTH_SHORT).show();					
 				}
 			});
-			logout();
 		}
 		
 		public void onAccessDenied() {
@@ -506,6 +515,14 @@ public class BrowserActivity extends FragmentActivity implements
 	
 	private void logout() {
 		credentials.removeCredential(FileListFragment.selectedServer.mac);
+	}
+	
+	public static void onResumeNoLogFailed(String servername) {
+		Toast.makeText(context, "Please login to server: " + servername + " before accessing this file" , Toast.LENGTH_SHORT).show();
+	}
+	
+	public static void onResumeAuthFailed(String servername) {
+		Toast.makeText(context, "Access denied to server: " + servername + " when accessing this file" , Toast.LENGTH_SHORT).show();
 	}
 	
 }
